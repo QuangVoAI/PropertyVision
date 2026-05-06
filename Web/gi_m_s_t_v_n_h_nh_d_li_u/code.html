@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Data Operations | Decision Support System</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191b23",
+                        "tertiary-fixed": "#ffdbcd",
+                        "tertiary": "#943700",
+                        "secondary-fixed": "#d3e4fe",
+                        "primary-container": "#2563eb",
+                        "on-background": "#191b23",
+                        "surface-variant": "#e1e2ed",
+                        "tertiary-container": "#bc4800",
+                        "surface-container-highest": "#e1e2ed",
+                        "on-secondary-container": "#54647a",
+                        "surface-dim": "#d9d9e5",
+                        "surface-container": "#ededf9",
+                        "on-tertiary-container": "#ffede6",
+                        "surface-bright": "#faf8ff",
+                        "primary": "#004ac6",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#0b1c30",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#2e3039",
+                        "outline": "#737686",
+                        "inverse-on-surface": "#f0f0fb",
+                        "surface-container-low": "#f3f3fe",
+                        "on-tertiary-fixed": "#360f00",
+                        "on-primary-container": "#eeefff",
+                        "on-surface-variant": "#434655",
+                        "secondary-container": "#d0e1fb",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "outline-variant": "#c3c6d7",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "secondary": "#505f76",
+                        "surface-tint": "#0053db",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-primary-fixed": "#00174b",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "background": "#faf8ff",
+                        "surface": "#faf8ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e7e7f3",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "inverse-primary": "#b4c5ff",
+                        "secondary-fixed-dim": "#b7c8e1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "margin": "32px",
+                        "container-max": "1440px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "unit": "4px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "metric-lg": ["JetBrains Mono"],
+                        "metric-sm": ["JetBrains Mono"],
+                        "label-caps": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "metric-md": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-base": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "metric-lg": ["28px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "metric-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "title-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "metric-md": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-base text-body-base min-h-screen antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-screen w-[240px] flex flex-col bg-surface-container-lowest border-r border-outline-variant shadow-sm py-stack-lg gap-stack-md z-50">
+<!-- Brand / Header -->
+<div class="px-stack-lg mb-stack-md">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">RealEstate DSS</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-unit">Thông tin Phân tích Chuyên sâu</p>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto px-stack-sm flex flex-col gap-unit">
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span> Tổng quan Điều hành</a>
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="query_stats">query_stats</span> Thông tin Thị trường</a>
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="analytics">analytics</span> Phân tích Đa chiều</a>
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="science">science</span> Phòng thí nghiệm Quyết định</a>
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="map">map</span> GIS &amp; Quy hoạch</a>
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="psychology">psychology</span> Trợ lý AI</a>
+<!-- ACTIVE TAB -->
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm rounded-DEFAULT text-primary font-bold border-r-2 border-primary bg-primary-container/10 opacity-90 transition-opacity font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="settings_input_component" style="font-variation-settings: 'FILL' 1;">settings_input_component</span> Vận hành Dữ liệu</a>
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="explore">explore</span> Khám phá Dữ liệu</a>
+</div>
+<!-- CTA -->
+<div class="px-stack-lg mt-auto">
+<button class="w-full bg-primary-container text-on-primary py-stack-sm px-stack-md rounded-DEFAULT font-body-sm text-body-sm font-semibold hover:bg-primary transition-colors shadow-sm">Phân tích Mới</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-[240px] min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-[240px] h-16 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex items-center justify-between px-gutter w-[calc(100%-240px)]">
+<div class="flex items-center gap-stack-md">
+<h2 class="font-title-sm text-title-sm font-bold text-on-surface">Hệ thống Hỗ trợ Quyết định</h2>
+</div>
+<div class="flex items-center gap-stack-sm">
+<button class="p-unit rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined" data-icon="notifications_active">notifications_active</span>
+</button>
+<button class="p-unit rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<button class="p-unit rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 overflow-hidden h-8 w-8 ml-unit">
+<img alt="User Profile" class="h-full w-full object-cover" data-alt="A professional corporate headshot of a person looking directly at the camera. The lighting is soft and high-key, creating a bright and trustworthy mood. The background is a clean, minimal white to blend seamlessly with a modern, light-mode UI design. The overall aesthetic is institutional and reliable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATzGkr0Efkk4YNemvsMk-A4YS8wHNsvX12kUL8FAC7iu72DySf6WR_LsPDjhp_MOx7rvXeIYSyDloPhrIpOTS2354YFO863GYoUVzds8ZYGMboEk2f_K3UCkc5JFW_cth6HMyuoZvSDRm9eTMcvmqhrTZJvXXb00hE06dJegT5pBHFNipX9SseW2ZuWuY4VjDN3hDdJqW4d8JhMc4DWkXn2OuqcprVrDQmyP6iCAE57ltmfzamz6lYKkD8_x97Y11PEmpy4NqFT-s"/>
+</button>
+</div>
+</header>
+<!-- Page Content Canvas -->
+<div class="pt-[96px] pb-margin px-margin flex-1 flex flex-col gap-margin max-w-container-max w-full mx-auto">
+<!-- Page Header -->
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface">Giám sát vận hành dữ liệu</h1>
+<p class="font-body-base text-body-base text-on-surface-variant mt-unit max-w-3xl">Chẩn đoán trực tiếp và nhật ký thực thi cho tất cả các dịch vụ thu nạp dữ liệu.</p>
+</div>
+<!-- KPI Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-stack-lg">
+<!-- KPI Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-stack-lg flex flex-col gap-stack-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="absolute top-0 right-0 p-stack-md opacity-20 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-[48px]" data-icon="database">database</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Bản ghi giao dịch đã nạp</span>
+<div class="flex items-baseline gap-stack-sm">
+<span class="font-metric-lg text-metric-lg text-on-surface">1,248,903</span>
+<span class="font-metric-sm text-metric-sm text-primary flex items-center">
+<span class="material-symbols-outlined text-[16px]" data-icon="arrow_upward">arrow_upward</span> 12%
+                        </span>
+</div>
+<div class="w-full bg-surface-container h-1 mt-auto rounded-full overflow-hidden">
+<div class="bg-primary-container h-full w-[85%] rounded-full"></div>
+</div>
+</div>
+<!-- KPI Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-stack-lg flex flex-col gap-stack-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="absolute top-0 right-0 p-stack-md opacity-20 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-[48px]" data-icon="description">description</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Tài liệu quy hoạch đã xử lý</span>
+<div class="flex items-baseline gap-stack-sm">
+<span class="font-metric-lg text-metric-lg text-on-surface">8,450</span>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant flex items-center"><span class="material-symbols-outlined text-[16px]" data-icon="horizontal_rule">horizontal_rule</span> Ổn định</span>
+</div>
+<div class="w-full bg-surface-container h-1 mt-auto rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[60%] rounded-full"></div>
+</div>
+</div>
+<!-- KPI Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-stack-lg flex flex-col gap-stack-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="absolute top-0 right-0 p-stack-md opacity-20 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-[48px]" data-icon="verified_user">verified_user</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Điểm tin cậy hệ thống</span>
+<div class="flex items-baseline gap-stack-sm">
+<span class="font-metric-lg text-metric-lg text-primary">99.8%</span>
+</div>
+<div class="w-full bg-surface-container h-1 mt-auto rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[99%] rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Main Data Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-stack-lg items-start">
+<!-- ETL Run Log Table (Spans 8 columns) -->
+<div class="xl:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="px-stack-lg py-stack-md border-b border-outline-variant flex justify-between items-center bg-surface-bright">
+<h3 class="font-title-sm text-title-sm text-on-surface">Nhật ký chạy ETL</h3>
+<button class="flex items-center gap-unit text-on-surface-variant hover:text-primary transition-colors font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span> Lọc</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="py-stack-sm px-stack-md font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider sticky top-0 shadow-sm">Thời gian (UTC)</th>
+<th class="py-stack-sm px-stack-md font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider sticky top-0 shadow-sm">Nguồn dữ liệu</th>
+<th class="py-stack-sm px-stack-md font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider sticky top-0 shadow-sm">Trạng thái</th>
+<th class="py-stack-sm px-stack-md font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right sticky top-0 shadow-sm">Bản ghi đã xử lý</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-on-surface-variant">2023-10-27 14:05:01</td>
+<td class="py-stack-sm px-stack-md font-medium">HCMGIS Parcel Data</td>
+<td class="py-stack-sm px-stack-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-fixed text-on-primary-fixed border border-primary-fixed-dim">Thành công</span>
+</td>
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-right">45,201</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-on-surface-variant">2023-10-27 13:30:44</td>
+<td class="py-stack-sm px-stack-md font-medium">National Census Bureau API</td>
+<td class="py-stack-sm px-stack-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-container-high text-on-surface-variant border border-outline-variant">Cảnh báo</span>
+</td>
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-right">12,000</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-on-surface-variant">2023-10-27 12:15:00</td>
+<td class="py-stack-sm px-stack-md font-medium">FRED Economic Indicators</td>
+<td class="py-stack-sm px-stack-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-fixed text-on-primary-fixed border border-primary-fixed-dim">Thành công</span>
+</td>
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-right">850</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-on-surface-variant">2023-10-27 11:00:22</td>
+<td class="py-stack-sm px-stack-md font-medium">Local Zoning Board Scraper</td>
+<td class="py-stack-sm px-stack-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-error-container text-on-error-container border border-error/20">Thất bại</span>
+</td>
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-right text-error">0</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-on-surface-variant">2023-10-27 10:45:10</td>
+<td class="py-stack-sm px-stack-md font-medium">Kaggle Property Sales Dump</td>
+<td class="py-stack-sm px-stack-md">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-fixed text-on-primary-fixed border border-primary-fixed-dim">Thành công</span>
+</td>
+<td class="py-stack-sm px-stack-md font-metric-sm text-metric-sm text-right">1,200,500</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-stack-lg py-stack-sm border-t border-outline-variant bg-surface-container-low flex justify-end">
+<button class="text-primary font-body-sm text-body-sm font-medium hover:underline">Xem tất cả nhật ký</button>
+</div>
+</div>
+<!-- Public Data Hub Sidebar (Spans 4 columns) -->
+<div class="xl:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-stack-lg flex flex-col gap-stack-md">
+<div class="flex justify-between items-center mb-stack-sm">
+<h3 class="font-title-sm text-title-sm text-on-surface">Trung tâm dữ liệu công cộng</h3>
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="cloud_sync">cloud_sync</span>
+</div>
+<div class="flex flex-col gap-unit">
+<!-- Source Item -->
+<div class="flex items-center justify-between py-stack-sm border-b border-outline-variant last:border-0">
+<div class="flex items-center gap-stack-sm">
+<div class="w-2 h-2 rounded-full bg-primary ring-2 ring-primary-fixed-dim"></div>
+<span class="font-body-sm text-body-sm text-on-surface">HCMGIS Servers</span>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant">Trực tuyến</span>
+</div>
+<!-- Source Item -->
+<div class="flex items-center justify-between py-stack-sm border-b border-outline-variant last:border-0">
+<div class="flex items-center gap-stack-sm">
+<div class="w-2 h-2 rounded-full bg-primary ring-2 ring-primary-fixed-dim"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Census Bureau API</span>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant">Trực tuyến</span>
+</div>
+<!-- Source Item -->
+<div class="flex items-center justify-between py-stack-sm border-b border-outline-variant last:border-0">
+<div class="flex items-center gap-stack-sm">
+<div class="w-2 h-2 rounded-full bg-tertiary ring-2 ring-tertiary-fixed-dim animate-pulse"></div>
+<span class="font-body-sm text-body-sm text-on-surface">FRED Database</span>
+</div>
+<span class="font-metric-sm text-metric-sm text-tertiary">Độ trễ cao</span>
+</div>
+<!-- Source Item -->
+<div class="flex items-center justify-between py-stack-sm border-b border-outline-variant last:border-0">
+<div class="flex items-center gap-stack-sm">
+<div class="w-2 h-2 rounded-full bg-error ring-2 ring-error-container"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Zoning Portal (Scraper)</span>
+</div>
+<span class="font-metric-sm text-metric-sm text-error">Ngắt kết nối</span>
+</div>
+<!-- Source Item -->
+<div class="flex items-center justify-between py-stack-sm border-b border-outline-variant last:border-0">
+<div class="flex items-center gap-stack-sm">
+<div class="w-2 h-2 rounded-full bg-primary ring-2 ring-primary-fixed-dim"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Kaggle Datasets</span>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant">Đang đồng bộ...</span>
+</div>
+</div>
+<button class="w-full mt-stack-sm border border-outline-variant text-on-surface py-stack-sm rounded-DEFAULT font-body-sm text-body-sm font-medium hover:bg-surface-container transition-colors">Quản lý kết nối</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

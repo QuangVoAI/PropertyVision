@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Phân tích thị trường - Hệ thống hỗ trợ quyết định</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191b23",
+                        "tertiary-fixed": "#ffdbcd",
+                        "tertiary": "#943700",
+                        "secondary-fixed": "#d3e4fe",
+                        "primary-container": "#2563eb",
+                        "on-background": "#191b23",
+                        "surface-variant": "#e1e2ed",
+                        "tertiary-container": "#bc4800",
+                        "surface-container-highest": "#e1e2ed",
+                        "on-secondary-container": "#54647a",
+                        "surface-dim": "#d9d9e5",
+                        "surface-container": "#ededf9",
+                        "on-tertiary-container": "#ffede6",
+                        "surface-bright": "#faf8ff",
+                        "primary": "#004ac6",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#0b1c30",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#2e3039",
+                        "outline": "#737686",
+                        "inverse-on-surface": "#f0f0fb",
+                        "surface-container-low": "#f3f3fe",
+                        "on-tertiary-fixed": "#360f00",
+                        "on-primary-container": "#eeefff",
+                        "on-surface-variant": "#434655",
+                        "secondary-container": "#d0e1fb",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "outline-variant": "#c3c6d7",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "secondary": "#505f76",
+                        "surface-tint": "#0053db",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-primary-fixed": "#00174b",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "background": "#faf8ff",
+                        "surface": "#faf8ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e7e7f3",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "inverse-primary": "#b4c5ff",
+                        "secondary-fixed-dim": "#b7c8e1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "margin": "32px",
+                        "container-max": "1440px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "unit": "4px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "metric-lg": ["JetBrains Mono"],
+                        "metric-sm": ["JetBrains Mono"],
+                        "label-caps": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "metric-md": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-base": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "metric-lg": ["28px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "metric-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "metric-md": ["18px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-base min-h-screen">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-screen w-[240px] flex flex-col bg-surface-container-lowest border-r border-outline-variant shadow-sm z-50">
+<div class="flex flex-col py-stack-lg gap-stack-md h-full">
+<div class="px-gutter mb-stack-md">
+<div class="flex items-center gap-stack-sm mb-stack-sm">
+<img alt="Organization Logo" class="w-8 h-8 rounded-full object-cover" data-alt="A clean, minimalist logo of a modern corporate building in dark blue against a pure white background. The lighting is even and flat, typical of high-end corporate branding. The aesthetic is highly professional, precise, and authoritative, matching an institutional intelligence theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGNIi_UFFmfiL3HeMLDqiEzg-MkqY7FFMb9fMlOkaac85kAYNAEjCM8uN78kTmm9RBB6UI5DSzPe-3lm7Fj9eWPaHk1iH4v1o3KxYWnxqQxdmoOJj1pomHrnaJ3kZo8yGElBC6JObQ-95JER0C3UyL5xmNAERtmXZ7B-RuU-2c966L3ahxfLzcbL34ZtYxCLjLnkajJdYtoC7kCWfGHy6qnwUvaI3bXFxMd2wVMSDaeGVlIX-YtCi_z_kr2F4E68iuTt-sNh7pRtc"/>
+<div>
+<h1 class="font-title-sm text-title-sm font-bold text-on-surface">RealEstate DSS</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Trí tuệ Tổ chức</p>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-stack-sm space-y-1">
+<a class="flex items-center gap-stack-md px-stack-md py-2 text-on-surface-variant hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-body-sm text-body-sm">Tổng quan điều hành</span>
+</a>
+<a class="flex items-center gap-stack-md px-stack-md py-2 text-primary font-bold border-r-2 border-primary bg-primary-container/10 transition-colors duration-150 rounded-DEFAULT opacity-90 transition-opacity" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+<span class="font-body-sm text-body-sm">Phân tích thị trường</span>
+</a>
+<a class="flex items-center gap-stack-md px-stack-md py-2 text-on-surface-variant hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+<span class="font-body-sm text-body-sm">Phân tích chi tiết</span>
+</a>
+<a class="flex items-center gap-stack-md px-stack-md py-2 text-on-surface-variant hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined text-[20px]">science</span>
+<span class="font-body-sm text-body-sm">Phòng thí nghiệm quyết định</span>
+</a>
+<a class="flex items-center gap-stack-md px-stack-md py-2 text-on-surface-variant hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined text-[20px]">map</span>
+<span class="font-body-sm text-body-sm">GIS &amp; Quy hoạch</span>
+</a>
+<a class="flex items-center gap-stack-md px-stack-md py-2 text-on-surface-variant hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+<span class="font-body-sm text-body-sm">Chuyên gia AI</span>
+</a>
+<a class="flex items-center gap-stack-md px-stack-md py-2 text-on-surface-variant hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined text-[20px]">settings_input_component</span>
+<span class="font-body-sm text-body-sm">Vận hành dữ liệu</span>
+</a>
+<a class="flex items-center gap-stack-md px-stack-md py-2 text-on-surface-variant hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined text-[20px]">explore</span>
+<span class="font-body-sm text-body-sm">Khám phá dữ liệu</span>
+</a>
+</div>
+<div class="px-gutter mt-auto pt-stack-md">
+<button class="w-full flex items-center justify-center gap-2 bg-primary-container text-on-primary font-body-sm text-body-sm py-2 px-4 rounded-DEFAULT hover:bg-primary transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2"><span class="material-symbols-outlined text-[18px]">add</span> Phân tích mới</button>
+</div>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-[240px] h-16 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex items-center justify-between px-gutter">
+<div class="flex flex-col">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase">HỆ THỐNG HỖ TRỢ QUYẾT ĐỊNH</div>
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface">Phân tích thị trường</h2>
+</div>
+<div class="flex items-center gap-stack-md">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-64 pl-10 pr-4 py-2 bg-surface rounded-DEFAULT border border-outline-variant font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow" placeholder="Tìm kiếm quận..." type="text"/>
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">notifications_active</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="ml-[240px] mt-16 p-margin min-h-[calc(100vh-64px)] flex flex-col gap-margin">
+<!-- Filter Toolbar -->
+<section class="bg-surface-container-lowest p-stack-md rounded-lg border border-outline-variant shadow-sm flex flex-wrap items-center gap-stack-md">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">filter_list</span>
+<span class="font-title-sm text-title-sm text-on-surface">Bộ lọc:</span>
+</div>
+<div class="flex items-center gap-stack-sm">
+<label class="font-body-sm text-body-sm text-on-surface-variant">Khu vực</label>
+<select class="form-select bg-surface border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm py-1 pl-3 pr-8 focus:ring-2 focus:ring-primary focus:border-transparent"><option>Tất cả khu vực</option><option>Quận Bắc</option><option>Vịnh Nam</option><option>Lõi Trung tâm</option><option>Thung lũng Đông</option></select>
+</div>
+<div class="flex items-center gap-stack-sm">
+<label class="font-body-sm text-body-sm text-on-surface-variant">Loại tài sản</label>
+<select class="form-select bg-surface border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm py-1 pl-3 pr-8 focus:ring-2 focus:ring-primary focus:border-transparent"><option>Tất cả loại</option><option>Căn hộ nhiều hộ</option><option>Thương mại</option><option>Công nghiệp</option><option>Hỗn hợp</option></select>
+</div>
+<div class="flex items-center gap-stack-sm">
+<label class="font-body-sm text-body-sm text-on-surface-variant">Thời gian</label>
+<select class="form-select bg-surface border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm py-1 pl-3 pr-8 focus:ring-2 focus:ring-primary focus:border-transparent"><option>Quý 3 2023</option><option>Từ đầu năm</option><option>12 tháng qua</option><option>Trung bình 3 năm</option></select>
+</div>
+<button class="ml-auto bg-surface border border-outline-variant text-on-surface hover:bg-surface-container px-4 py-1.5 rounded-DEFAULT font-body-sm text-body-sm transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">refresh</span> Áp dụng</button>
+</section>
+<!-- KPI Strip -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-stack-lg">
+<div class="bg-surface-container-lowest p-stack-lg border border-outline-variant shadow-sm rounded-lg flex flex-col gap-unit">
+<div class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Lợi nhuận trung bình</div>
+<div class="font-metric-lg text-metric-lg text-on-surface">6.8%</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="font-metric-sm text-metric-sm">+1.8% so với cùng kỳ</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-lg border border-outline-variant shadow-sm rounded-lg flex flex-col gap-unit">
+<div class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Tin đăng hoạt động</div>
+<div class="font-metric-lg text-metric-lg text-on-surface">1,248</div>
+<div class="flex items-center gap-1 text-error">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+<span class="font-metric-sm text-metric-sm">+1.8% so với cùng kỳ</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-lg border border-outline-variant shadow-sm rounded-lg flex flex-col gap-unit">
+<div class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Giá trung bình/m²</div>
+<div class="font-metric-lg text-metric-lg text-on-surface">$4,520</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="font-metric-sm text-metric-sm">+1.8% so với cùng kỳ</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-lg border border-outline-variant shadow-sm rounded-lg flex flex-col gap-unit">
+<div class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Tỷ lệ hấp thụ</div>
+<div class="font-metric-lg text-metric-lg text-on-surface">4.2 mos</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">horizontal_rule</span>
+<span class="font-metric-sm text-metric-sm">Ổn định</span>
+</div>
+</div>
+</section>
+<!-- Charts Row -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-stack-lg">
+<!-- Bar Chart: ROI by District -->
+<div class="lg:col-span-7 bg-surface-container-lowest border border-outline-variant shadow-sm rounded-lg flex flex-col">
+<div class="p-stack-lg border-b border-outline-variant flex justify-between items-center">
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface">ROI theo Quận (Top 12)</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Lợi nhuận trung bình 12 tháng qua</p>
+</div>
+<button class="p-1 text-on-surface-variant hover:bg-surface-container rounded-DEFAULT transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="p-stack-lg flex-1 min-h-[300px] relative">
+<!-- Faux Bar Chart Rendering -->
+<div class="absolute inset-x-stack-lg inset-y-stack-lg flex flex-col justify-end gap-2 border-l border-b border-outline-variant pb-2 pl-2">
+<!-- Y Axis Labels -->
+<div class="absolute left-[-30px] top-0 h-full flex flex-col justify-between font-metric-sm text-metric-sm text-on-surface-variant">
+<span>12%</span>
+<span>9%</span>
+<span>6%</span>
+<span>3%</span>
+<span>0%</span>
+</div>
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="w-full h-0"></div> <!-- Baseline handled by border-b -->
+</div>
+<!-- Bars -->
+<div class="relative w-full h-full flex items-end justify-around px-2 gap-1 z-10">
+<!-- Bar 1 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-primary hover:bg-primary-fixed-dim transition-colors h-[90%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">10.8%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist A</span>
+</div>
+<!-- Bar 2 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-primary hover:bg-primary-fixed-dim transition-colors h-[85%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">10.2%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist B</span>
+</div>
+<!-- Bar 3 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-secondary hover:bg-secondary-fixed-dim transition-colors h-[75%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">9.0%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist C</span>
+</div>
+<!-- Bar 4 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-secondary hover:bg-secondary-fixed-dim transition-colors h-[70%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">8.4%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist D</span>
+</div>
+<!-- Bar 5 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-secondary hover:bg-secondary-fixed-dim transition-colors h-[68%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">8.1%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist E</span>
+</div>
+<!-- Bar 6 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-surface-variant hover:bg-surface-dim transition-colors h-[60%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">7.2%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist F</span>
+</div>
+<!-- Bar 7 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-surface-variant hover:bg-surface-dim transition-colors h-[55%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">6.6%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist G</span>
+</div>
+<!-- Bar 8 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-surface-variant hover:bg-surface-dim transition-colors h-[50%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">6.0%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist H</span>
+</div>
+<!-- Bar 9 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-surface-variant hover:bg-surface-dim transition-colors h-[48%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">5.7%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist I</span>
+</div>
+<!-- Bar 10 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-tertiary-container hover:bg-tertiary transition-colors h-[40%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">4.8%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist J</span>
+</div>
+<!-- Bar 11 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-tertiary-container hover:bg-tertiary transition-colors h-[35%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">4.2%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist K</span>
+</div>
+<!-- Bar 12 -->
+<div class="w-full max-w-[40px] group flex flex-col items-center">
+<div class="w-full bg-tertiary-container hover:bg-tertiary transition-colors h-[30%] rounded-t-sm relative">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none transition-opacity whitespace-nowrap">3.6%</div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface-variant mt-2 rotate-45 origin-left whitespace-nowrap">Dist L</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Scatter Plot: Price vs Liquidity -->
+<div class="lg:col-span-5 bg-surface-container-lowest border border-outline-variant shadow-sm rounded-lg flex flex-col">
+<div class="p-stack-lg border-b border-outline-variant flex justify-between items-center">
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface">Giá vs Thanh khoản</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Giá/m² so với số lượng tin đăng</p>
+</div>
+<button class="p-1 text-on-surface-variant hover:bg-surface-container rounded-DEFAULT transition-colors">
+<span class="material-symbols-outlined">open_in_full</span>
+</button>
+</div>
+<div class="p-stack-lg flex-1 min-h-[300px] relative">
+<!-- Faux Scatter Plot Rendering -->
+<div class="absolute inset-x-stack-lg inset-y-stack-lg flex flex-col justify-end gap-2 border-l border-b border-outline-variant pb-2 pl-2">
+<!-- Y Axis Labels (Liquidity) -->
+<div class="absolute left-[-40px] top-0 h-full flex flex-col justify-between font-metric-sm text-metric-sm text-on-surface-variant">
+<span>1000</span>
+<span>750</span>
+<span>500</span>
+<span>250</span>
+<span>0</span>
+</div>
+<!-- X Axis Labels (Price) -->
+<div class="absolute bottom-[-24px] left-0 w-full flex justify-between font-metric-sm text-metric-sm text-on-surface-variant">
+<span>$2k</span>
+<span>$4k</span>
+<span>$6k</span>
+<span>$8k</span>
+<span>$10k</span>
+</div>
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="w-full h-0"></div>
+</div>
+<div class="absolute inset-0 flex justify-between pointer-events-none z-0">
+<div class="h-full w-[1px] bg-outline-variant/30"></div>
+<div class="h-full w-[1px] bg-outline-variant/30"></div>
+<div class="h-full w-[1px] bg-outline-variant/30"></div>
+<div class="h-full w-[1px] bg-outline-variant/30"></div>
+<div class="h-full w-0"></div>
+</div>
+<!-- Data Points -->
+<div class="relative w-full h-full z-10">
+<!-- High Price, Low Liq -->
+<div class="absolute right-[10%] top-[80%] w-3 h-3 rounded-full bg-primary ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm group">
+<div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none whitespace-nowrap z-50">Luxury A: $9.2k, 210 list</div>
+</div>
+<div class="absolute right-[25%] top-[70%] w-3 h-3 rounded-full bg-primary ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm"></div>
+<!-- Mid Price, Mid Liq -->
+<div class="absolute right-[50%] top-[40%] w-3 h-3 rounded-full bg-secondary ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm group">
+<div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none whitespace-nowrap z-50">Mid C: $5.1k, 620 list</div>
+</div>
+<div class="absolute right-[45%] top-[55%] w-3 h-3 rounded-full bg-secondary ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm"></div>
+<div class="absolute right-[60%] top-[30%] w-3 h-3 rounded-full bg-secondary ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm"></div>
+<!-- Low Price, High Liq -->
+<div class="absolute right-[80%] top-[10%] w-3 h-3 rounded-full bg-tertiary-container ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm group">
+<div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-metric-sm text-metric-sm px-2 py-1 rounded-DEFAULT pointer-events-none whitespace-nowrap z-50">Afford F: $2.8k, 910 list</div>
+</div>
+<div class="absolute right-[75%] top-[25%] w-3 h-3 rounded-full bg-tertiary-container ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm"></div>
+<div class="absolute right-[85%] top-[15%] w-3 h-3 rounded-full bg-tertiary-container ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm"></div>
+<div class="absolute right-[90%] top-[5%] w-3 h-3 rounded-full bg-tertiary-container ring-2 ring-surface-container-lowest hover:scale-150 transition-transform cursor-pointer shadow-sm"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Segment Comparison Table -->
+<section class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-lg flex flex-col overflow-hidden">
+<div class="p-stack-lg border-b border-outline-variant flex justify-between items-center bg-surface-bright">
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface">So sánh phân khúc</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Các chỉ số tổng hợp theo phân khúc nhà ở</p>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface border border-outline-variant text-on-surface hover:bg-surface-container px-3 py-1.5 rounded-DEFAULT font-body-sm text-body-sm transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">download</span> Xuất dữ liệu</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant font-label-caps text-label-caps text-on-surface-variant uppercase sticky top-0 shadow-sm z-10">
+<tr>
+<th class="py-3 px-stack-md font-semibold">Phân khúc</th>
+<th class="py-3 px-stack-md font-semibold">Khối lượng (YTD)</th>
+<th class="py-3 px-stack-md font-semibold">Giá TB/m²</th>
+<th class="py-3 px-stack-md font-semibold">Lợi nhuận TB</th>
+<th class="py-3 px-stack-md font-semibold">Hồ sơ rủi ro</th>
+<th class="py-3 px-stack-md font-semibold text-right">Xu hướng</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-outline-variant/50">
+<!-- Luxury Row -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-stack-md">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-semibold">Cao cấp (Top 10%)</span>
+</div>
+</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">$1.24B</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">$8,450</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">4.2%</td>
+<td class="py-3 px-stack-md">
+<span class="bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider">THẤP</span>
+</td>
+<td class="py-3 px-stack-md text-right text-primary">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+</td>
+</tr>
+<!-- Mid-range Row -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-stack-md">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="font-semibold">Trung cấp (Giữa 50%)</span>
+</div>
+</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">$3.85B</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">$4,200</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">6.5%</td>
+<td class="py-3 px-stack-md">
+<span class="bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider">TRUNG BÌNH</span>
+</td>
+<td class="py-3 px-stack-md text-right text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">horizontal_rule</span>
+</td>
+</tr>
+<!-- Affordable Row -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-stack-md">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-tertiary-container"></div>
+<span class="font-semibold">Bình dân (Cuối 40%)</span>
+</div>
+</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">$2.10B</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">$2,150</td>
+<td class="py-3 px-stack-md font-metric-sm text-metric-sm">8.9%</td>
+<td class="py-3 px-stack-md">
+<span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider">CAO</span>
+</td>
+<td class="py-3 px-stack-md text-right text-error">
+<span class="material-symbols-outlined text-[18px]">trending_down</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</body></html>

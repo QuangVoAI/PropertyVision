@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Executive Overview - RealEstate DSS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#54647a",
+                        "surface-container-highest": "#e1e2ed",
+                        "tertiary-container": "#bc4800",
+                        "surface-variant": "#e1e2ed",
+                        "tertiary-fixed": "#ffdbcd",
+                        "tertiary": "#943700",
+                        "secondary-fixed": "#d3e4fe",
+                        "primary-container": "#2563eb",
+                        "on-background": "#191b23",
+                        "on-surface": "#191b23",
+                        "on-secondary-fixed": "#0b1c30",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#faf8ff",
+                        "primary": "#004ac6",
+                        "on-tertiary-container": "#ffede6",
+                        "surface-dim": "#d9d9e5",
+                        "surface-container": "#ededf9",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "outline-variant": "#c3c6d7",
+                        "secondary-container": "#d0e1fb",
+                        "on-surface-variant": "#434655",
+                        "surface-container-low": "#f3f3fe",
+                        "on-tertiary-fixed": "#360f00",
+                        "on-primary-container": "#eeefff",
+                        "outline": "#737686",
+                        "inverse-on-surface": "#f0f0fb",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#2e3039",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "inverse-primary": "#b4c5ff",
+                        "primary-fixed": "#dbe1ff",
+                        "on-primary": "#ffffff",
+                        "surface-container-high": "#e7e7f3",
+                        "on-error": "#ffffff",
+                        "surface": "#faf8ff",
+                        "on-tertiary": "#ffffff",
+                        "background": "#faf8ff",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary-fixed": "#00174b",
+                        "surface-tint": "#0053db",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "secondary": "#505f76"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin": "32px",
+                        "container-max": "1440px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px",
+                        "gutter": "24px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "metric-md": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-base": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "metric-sm": ["JetBrains Mono"],
+                        "label-caps": ["Inter"],
+                        "metric-lg": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "metric-md": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "title-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "metric-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "metric-lg": ["28px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-base min-h-screen">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-screen w-[240px] flex flex-col bg-surface-container-lowest border-r border-outline-variant shadow-sm py-stack-lg gap-stack-md z-50">
+<div class="px-gutter mb-stack-md">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">RealEstate DSS</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Trí tuệ Tổ chức</p>
+</div>
+<div class="flex-1 overflow-y-auto px-unit flex flex-col gap-unit">
+<!-- Active Tab -->
+<a class="flex items-center gap-stack-sm px-gutter py-stack-sm text-primary font-bold border-r-2 border-primary bg-primary-container/10 transition-opacity opacity-90 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span> Tổng quan</a>
+<a class="flex items-center gap-stack-sm px-gutter py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined">query_stats</span> Thị trường</a>
+<a class="flex items-center gap-stack-sm px-gutter py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined">analytics</span> Phân tích đa chiều</a>
+<a class="flex items-center gap-stack-sm px-gutter py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined">science</span> Phòng thí nghiệm</a>
+<a class="flex items-center gap-stack-sm px-gutter py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined">map</span> Bản đồ &amp; Quy hoạch</a>
+<a class="flex items-center gap-stack-sm px-gutter py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined">psychology</span> Trợ lý AI</a>
+<a class="flex items-center gap-stack-sm px-gutter py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined">settings_input_component</span> Vận hành dữ liệu</a>
+<a class="flex items-center gap-stack-sm px-gutter py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined">explore</span> Khai thác dữ liệu</a>
+</div>
+<div class="px-gutter mt-auto">
+<button class="w-full bg-primary-container text-on-primary-container font-title-sm text-title-sm py-stack-sm rounded hover:bg-primary transition-colors flex items-center justify-center gap-stack-sm"><span class="material-symbols-outlined">add</span> Phân tích mới</button>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-[240px] h-16 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex items-center justify-between px-gutter w-[calc(100%-240px)]">
+<div class="flex items-center gap-stack-md">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">TỔNG QUAN / BẢNG ĐIỀU KHIỂN</span>
+</div>
+<div class="font-title-sm text-title-sm font-bold text-on-surface absolute left-1/2 -translate-x-1/2">Hệ thống Hỗ trợ Quyết định</div>
+<div class="flex items-center gap-stack-sm">
+<button class="p-unit rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">notifications_active</span>
+</button>
+<button class="p-unit rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="p-unit rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] pt-16 min-h-screen p-margin flex flex-col gap-margin max-w-container-max mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col gap-stack-sm">
+<h2 class="font-display-lg text-display-lg text-on-surface">Tổng quan Quyết định Chiến lược</h2>
+<p class="font-body-base text-body-base text-on-surface-variant">Thông tin thị trường thời gian thực và hiệu quả danh mục đầu tư.</p>
+</div>
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-stack-md">
+<!-- Total Value -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-stack-md shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Total Value</span>
+<span class="material-symbols-outlined text-primary-container text-[20px]">account_balance</span>
+</div>
+<div class="font-metric-lg text-metric-lg text-on-surface">$1.2B</div>
+<div class="mt-stack-sm flex items-center gap-unit text-[12px] font-metric-sm text-[#059669]">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                    +4.2% YTD
+                </div>
+</div>
+<!-- Median Price -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-stack-md shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Median Price</span>
+<span class="material-symbols-outlined text-primary-container text-[20px]">sell</span>
+</div>
+<div class="font-metric-lg text-metric-lg text-on-surface">$450K</div>
+<div class="mt-stack-sm flex items-center gap-unit text-[12px] font-metric-sm text-[#059669]">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                    +1.8% MOM
+                </div>
+</div>
+<!-- Avg ROI -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-stack-md shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Avg ROI</span>
+<span class="material-symbols-outlined text-primary-container text-[20px]">monitoring</span>
+</div>
+<div class="font-metric-lg text-metric-lg text-on-surface">12.4%</div>
+<div class="mt-stack-sm flex items-center gap-unit text-[12px] font-metric-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">horizontal_rule</span>
+                    Stable
+                </div>
+</div>
+<!-- Best District -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-stack-md shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Best District</span>
+<span class="material-symbols-outlined text-primary-container text-[20px]">location_city</span>
+</div>
+<div class="font-title-sm text-title-sm text-on-surface mt-unit">District 7</div>
+<div class="mt-stack-sm flex items-center gap-unit text-[12px] font-metric-sm text-primary-container">
+<span class="material-symbols-outlined text-[14px]">star</span>
+                    Top Performer
+                </div>
+</div>
+<!-- Transaction Proxy -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-stack-md shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Txn Proxy</span>
+<span class="material-symbols-outlined text-primary-container text-[20px]">swap_horiz</span>
+</div>
+<div class="font-metric-lg text-metric-lg text-on-surface">1,482</div>
+<div class="mt-stack-sm flex items-center gap-unit text-[12px] font-metric-sm text-error">
+<span class="material-symbols-outlined text-[14px]">trending_down</span>
+                    -2.1% YOY
+                </div>
+</div>
+</div>
+<!-- Main Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-stack-md">
+<!-- Main Chart Area (Spans 8 cols) -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-lg shadow-sm flex flex-col">
+<div class="p-stack-md border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-title-sm text-title-sm text-on-surface">Xu hướng Thị trường &amp; ROI</h3>
+<div class="flex gap-stack-sm">
+<span class="flex items-center gap-unit font-label-caps text-label-caps text-on-surface-variant"><div class="w-3 h-3 bg-primary-container rounded-sm"></div> Value</span>
+<span class="flex items-center gap-unit font-label-caps text-label-caps text-on-surface-variant"><div class="w-3 h-3 bg-secondary rounded-sm"></div> ROI %</span>
+</div>
+</div>
+<div class="flex-1 p-stack-md min-h-[300px] relative">
+<!-- Abstract representation of a dual-axis chart using CSS -->
+<div class="absolute inset-x-stack-md inset-y-stack-md flex items-end gap-2">
+<!-- Bars for Value -->
+<div class="w-full flex justify-between items-end h-full gap-1 opacity-20">
+<div class="w-full bg-primary-container h-[40%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[45%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[50%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[48%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[60%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[65%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[70%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[80%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[85%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[82%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[90%] rounded-t-sm"></div>
+<div class="w-full bg-primary-container h-[100%] rounded-t-sm"></div>
+</div>
+</div>
+<!-- Line for ROI -->
+<svg class="absolute inset-x-stack-md inset-y-stack-md w-[calc(100%-32px)] h-[calc(100%-32px)]" preserveaspectratio="none">
+<polyline fill="none" points="0,200 50,190 100,180 150,185 200,160 250,150 300,140 350,120 400,110 450,115 500,90 550,70" stroke="#505f76" stroke-width="2" vector-effect="non-scaling-stroke"></polyline>
+</svg>
+</div>
+</div>
+<!-- Side Panel (Spans 4 cols) -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-stack-md">
+<!-- Capital Allocation Donut -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-sm flex flex-col flex-1">
+<div class="p-stack-md border-b border-outline-variant">
+<h3 class="font-title-sm text-title-sm text-on-surface">Phân bổ Vốn theo Phân khúc</h3>
+</div>
+<div class="p-stack-md flex-1 flex items-center justify-center relative">
+<!-- Abstract Donut Chart -->
+<div class="w-48 h-48 rounded-full border-[16px] border-primary-container relative">
+<!-- Overlay to create donut segments visually -->
+<div class="absolute inset-[-16px] rounded-full border-[16px] border-secondary" style="clip-path: polygon(50% 50%, 100% 0, 100% 100%, 50% 100%);"></div>
+<div class="absolute inset-[-16px] rounded-full border-[16px] border-[#059669]" style="clip-path: polygon(50% 50%, 50% 100%, 0 100%, 0 50%);"></div>
+<div class="absolute inset-0 flex items-center justify-center flex-col">
+<span class="font-metric-lg text-metric-lg text-on-surface">3</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Phân khúc</span>
+</div>
+</div>
+</div>
+<div class="px-stack-md pb-stack-md flex justify-center gap-stack-md">
+<div class="flex items-center gap-unit font-body-sm text-body-sm"><div class="w-3 h-3 bg-primary-container rounded-full"></div> Commercial</div>
+<div class="flex items-center gap-unit font-body-sm text-body-sm"><div class="w-3 h-3 bg-secondary rounded-full"></div> Residential</div>
+<div class="flex items-center gap-unit font-body-sm text-body-sm"><div class="w-3 h-3 bg-[#059669] rounded-full"></div> Industrial</div>
+</div>
+</div>
+<!-- AI Recommendations -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-sm flex flex-col">
+<div class="p-stack-md border-b border-outline-variant flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-tertiary-container">psychology</span>
+<h3 class="font-title-sm text-title-sm text-on-surface">Khuyến nghị Chiến lược AI</h3>
+</div>
+<div class="p-stack-md flex flex-col gap-stack-sm">
+<div class="bg-error-container/30 border border-error-container p-stack-sm rounded flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-error mt-1 text-[20px]">warning</span>
+<div>
+<h4 class="font-title-sm text-title-sm text-on-surface text-[14px]">High Priority</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-unit">Expand portfolio in District 7 due to upcoming tech hub expansion.</p>
+</div>
+</div>
+<div class="bg-surface-container p-stack-sm rounded border border-outline-variant flex items-start gap-stack-sm">
+<span class="material-symbols-outlined text-primary mt-1 text-[20px]">info</span>
+<div>
+<h4 class="font-title-sm text-title-sm text-on-surface text-[14px]">Giảm thiểu rủi ro</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-unit">Cân nhắc thoái vốn tại các tài sản thương mại cũ ở Khu vực 4 để cải thiện lợi nhuận tổng thể.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

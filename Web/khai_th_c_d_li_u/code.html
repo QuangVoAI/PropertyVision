@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Khai thác dữ liệu - RealEstate DSS</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191b23",
+                        "tertiary-fixed": "#ffdbcd",
+                        "tertiary": "#943700",
+                        "secondary-fixed": "#d3e4fe",
+                        "primary-container": "#2563eb",
+                        "on-background": "#191b23",
+                        "surface-variant": "#e1e2ed",
+                        "tertiary-container": "#bc4800",
+                        "surface-container-highest": "#e1e2ed",
+                        "on-secondary-container": "#54647a",
+                        "surface-dim": "#d9d9e5",
+                        "surface-container": "#ededf9",
+                        "on-tertiary-container": "#ffede6",
+                        "surface-bright": "#faf8ff",
+                        "primary": "#004ac6",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#0b1c30",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#2e3039",
+                        "outline": "#737686",
+                        "inverse-on-surface": "#f0f0fb",
+                        "surface-container-low": "#f3f3fe",
+                        "on-tertiary-fixed": "#360f00",
+                        "on-primary-container": "#eeefff",
+                        "on-surface-variant": "#434655",
+                        "secondary-container": "#d0e1fb",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "outline-variant": "#c3c6d7",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "secondary": "#505f76",
+                        "surface-tint": "#0053db",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-primary-fixed": "#00174b",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "background": "#faf8ff",
+                        "surface": "#faf8ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e7e7f3",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "inverse-primary": "#b4c5ff",
+                        "secondary-fixed-dim": "#b7c8e1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "margin": "32px",
+                        "container-max": "1440px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "unit": "4px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "metric-lg": ["JetBrains Mono"],
+                        "metric-sm": ["JetBrains Mono"],
+                        "label-caps": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "metric-md": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-base": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "metric-lg": ["28px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "metric-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "title-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "metric-md": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-base antialiased min-h-screen">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest border-r border-outline-variant shadow-sm fixed left-0 top-0 h-screen w-[240px] flex flex-col z-50">
+<!-- Brand Area -->
+<div class="p-gutter border-b border-outline-variant flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">domain</span>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">RealEstate DSS</h1>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Institutional Intelligence</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col py-stack-lg gap-stack-md px-stack-sm overflow-y-auto flex-1">
+<a class="flex items-center gap-stack-sm px-stack-md py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-sm text-body-sm">Tổng quan điều hành</span>
+</a>
+<a class="flex items-center gap-stack-sm px-stack-md py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+<span class="font-body-sm text-body-sm">Thông tin thị trường</span>
+</a>
+<a class="flex items-center gap-stack-sm px-stack-md py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-body-sm text-body-sm">Phân tích chi tiết</span>
+</a>
+<a class="flex items-center gap-stack-sm px-stack-md py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined">science</span>
+<span class="font-body-sm text-body-sm">Phòng thí nghiệm quyết định</span>
+</a>
+<a class="flex items-center gap-stack-sm px-stack-md py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-body-sm text-body-sm">GIS &amp; Quy hoạch</span>
+</a>
+<a class="flex items-center gap-stack-sm px-stack-md py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-body-sm text-body-sm">Chuyên gia AI</span>
+</a>
+<a class="flex items-center gap-stack-sm px-stack-md py-stack-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 rounded-DEFAULT" href="#">
+<span class="material-symbols-outlined">settings_input_component</span>
+<span class="font-body-sm text-body-sm">Vận hành dữ liệu</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-stack-sm px-stack-md py-stack-sm text-primary font-bold border-r-2 border-primary bg-primary-container/10 opacity-90 transition-opacity" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-body-sm text-body-sm">Khai thác dữ liệu</span>
+</a>
+</div>
+<!-- CTA -->
+<div class="p-stack-md mt-auto border-t border-outline-variant">
+<button class="w-full bg-primary-container text-on-primary flex items-center justify-center gap-unit py-2 px-4 rounded-DEFAULT font-title-sm text-title-sm hover:opacity-90 transition-opacity"><span class="material-symbols-outlined text-sm">add</span> Phân tích mới</button>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="bg-surface-container-lowest border-b border-outline-variant shadow-sm fixed top-0 right-0 left-[240px] h-16 z-40 flex items-center justify-between px-gutter w-[calc(100%-240px)]">
+<!-- Left Side: Breadcrumbs/Title -->
+<div class="flex items-center gap-stack-sm">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">HỆ THỐNG HỖ TRỢ RA QUYẾT ĐỊNH / VẬN HÀNH DỮ LIỆU /</span>
+<span class="font-headline-md text-headline-md font-bold text-on-surface">Khai thác dữ liệu</span>
+</div>
+<!-- Right Side: Search & Actions -->
+<div class="flex items-center gap-stack-md">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-surface border border-outline-variant rounded-DEFAULT pl-8 pr-3 py-1.5 font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-on-surface-variant" placeholder="Tìm kiếm mã tài sản hoặc địa chỉ..." type="text"/>
+</div>
+<div class="flex items-center gap-unit border-l border-outline-variant pl-stack-md">
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications_active</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors ml-stack-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-[240px] pt-16 h-screen flex flex-col bg-surface">
+<!-- Filter Bar -->
+<div class="px-gutter py-stack-md bg-surface-container-lowest border-b border-outline-variant flex flex-wrap items-center justify-between gap-stack-md shrink-0 z-30">
+<div class="flex items-center gap-stack-sm">
+<!-- Advanced Filters -->
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant mr-2">Bộ lọc:</span>
+<button class="flex items-center gap-unit border border-outline-variant bg-surface px-3 py-1.5 rounded-DEFAULT font-body-sm text-body-sm hover:bg-surface-container transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-0">Quận <span class="material-symbols-outlined text-sm">arrow_drop_down</span></button>
+<button class="flex items-center gap-unit border border-outline-variant bg-surface px-3 py-1.5 rounded-DEFAULT font-body-sm text-body-sm hover:bg-surface-container transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-0">Loại tài sản <span class="material-symbols-outlined text-sm">arrow_drop_down</span></button>
+<button class="flex items-center gap-unit border border-primary bg-primary-container/10 text-primary px-3 py-1.5 rounded-DEFAULT font-body-sm text-body-sm hover:bg-primary-container/20 transition-colors"><span class="material-symbols-outlined text-sm">download</span> Xuất CSV</button>
+<button class="flex items-center gap-unit border border-outline-variant bg-surface px-3 py-1.5 rounded-DEFAULT font-body-sm text-body-sm hover:bg-surface-container transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-0"><span class="material-symbols-outlined text-sm">add</span> Thêm bộ lọc</button>
+</div>
+</div>
+<div class="flex items-center gap-stack-sm">
+<span class="font-metric-sm text-metric-sm text-on-surface-variant">1,248 Kết quả</span>
+<div class="h-4 w-px bg-outline-variant mx-2"></div>
+<button class="flex items-center gap-unit text-primary hover:bg-surface-container px-2 py-1 rounded-DEFAULT transition-colors font-title-sm text-title-sm"><span class="material-symbols-outlined text-sm">download</span> Xuất CSV</button>
+</div>
+</div>
+<!-- Data Grid & Detail Drawer Layout -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Main Data Table Container -->
+<div class="flex-1 overflow-auto bg-surface-container-lowest">
+<table class="w-full text-left border-collapse min-w-max">
+<thead class="sticky top-0 bg-surface-container-highest z-20 shadow-sm border-b border-outline-variant">
+<tr>
+<th class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant font-semibold cursor-pointer hover:bg-surface-dim transition-colors group">
+<div class="flex items-center gap-1">Mã tài sản <span class="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant font-semibold cursor-pointer hover:bg-surface-dim transition-colors group">
+<div class="flex items-center gap-1">Địa chỉ <span class="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant font-semibold cursor-pointer hover:bg-surface-dim transition-colors group">
+<div class="flex items-center gap-1">Quận <span class="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant font-semibold cursor-pointer hover:bg-surface-dim transition-colors group">
+<div class="flex items-center gap-1">Loại <span class="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant font-semibold text-right cursor-pointer hover:bg-surface-dim transition-colors group">
+<div class="flex items-center justify-end gap-1">Giá (VND) <span class="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant font-semibold text-right cursor-pointer hover:bg-surface-dim transition-colors group">
+<div class="flex items-center justify-end gap-1">Diện tích (m²) <span class="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100">arrow_downward</span></div>
+</th>
+<th class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant font-semibold text-right cursor-pointer hover:bg-surface-dim transition-colors group">
+<div class="flex items-center justify-end gap-1">ROI dự tính <span class="material-symbols-outlined text-[10px] opacity-100">arrow_downward</span></div>
+</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container cursor-pointer transition-colors group">
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface">RE-0842</td>
+<td class="px-4 py-2 text-on-surface truncate max-w-[200px]">14A Nguyen Dinh Chieu</td>
+<td class="px-4 py-2 text-on-surface-variant">District 1</td>
+<td class="px-4 py-2"><span class="bg-surface-dim px-2 py-0.5 rounded-DEFAULT text-xs">Commercial</span></td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">12,500,000,000</td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">125.5</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center gap-1 bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-DEFAULT font-metric-sm text-metric-sm">
+                                    8.5%
+                                </span>
+</td>
+</tr>
+<!-- Row 2 (Active state simulating selection for the drawer) -->
+<tr class="bg-primary-fixed/30 hover:bg-primary-fixed/40 cursor-pointer transition-colors border-l-2 border-l-primary relative">
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface">RE-0843</td>
+<td class="px-4 py-2 text-on-surface font-medium truncate max-w-[200px]">27B Le Thanh Ton</td>
+<td class="px-4 py-2 text-on-surface-variant">District 1</td>
+<td class="px-4 py-2"><span class="bg-surface-dim px-2 py-0.5 rounded-DEFAULT text-xs">Mixed Use</span></td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right font-medium">24,000,000,000</td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right font-medium">210.0</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center gap-1 bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-DEFAULT font-metric-sm text-metric-sm font-medium">
+                                    9.2%
+                                </span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container cursor-pointer transition-colors group">
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface">RE-0844</td>
+<td class="px-4 py-2 text-on-surface truncate max-w-[200px]">88 Nguyen Hue Blvd</td>
+<td class="px-4 py-2 text-on-surface-variant">District 1</td>
+<td class="px-4 py-2"><span class="bg-surface-dim px-2 py-0.5 rounded-DEFAULT text-xs">Retail</span></td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">45,000,000,000</td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">150.0</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center gap-1 bg-[#fef08a] text-[#854d0e] px-2 py-0.5 rounded-DEFAULT font-metric-sm text-metric-sm">
+                                    6.1%
+                                </span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container cursor-pointer transition-colors group">
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface">RE-0845</td>
+<td class="px-4 py-2 text-on-surface truncate max-w-[200px]">12 Vo Van Tan</td>
+<td class="px-4 py-2 text-on-surface-variant">District 3</td>
+<td class="px-4 py-2"><span class="bg-surface-dim px-2 py-0.5 rounded-DEFAULT text-xs">Villa</span></td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">55,200,000,000</td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">400.0</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center gap-1 bg-[#fee2e2] text-[#991b1b] px-2 py-0.5 rounded-DEFAULT font-metric-sm text-metric-sm">
+                                    4.2%
+                                </span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container cursor-pointer transition-colors group">
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface">RE-0846</td>
+<td class="px-4 py-2 text-on-surface truncate max-w-[200px]">205 Dien Bien Phu</td>
+<td class="px-4 py-2 text-on-surface-variant">Binh Thanh</td>
+<td class="px-4 py-2"><span class="bg-surface-dim px-2 py-0.5 rounded-DEFAULT text-xs">Office</span></td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">18,000,000,000</td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">250.0</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center gap-1 bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-DEFAULT font-metric-sm text-metric-sm">
+                                    7.8%
+                                </span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container cursor-pointer transition-colors group">
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface">RE-0847</td>
+<td class="px-4 py-2 text-on-surface truncate max-w-[200px]">45 Thu Thiem New City</td>
+<td class="px-4 py-2 text-on-surface-variant">District 2</td>
+<td class="px-4 py-2"><span class="bg-surface-dim px-2 py-0.5 rounded-DEFAULT text-xs">Land</span></td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">120,000,000,000</td>
+<td class="px-4 py-2 font-metric-sm text-metric-sm text-on-surface text-right">1000.0</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center gap-1 bg-[#fef08a] text-[#854d0e] px-2 py-0.5 rounded-DEFAULT font-metric-sm text-metric-sm">
+                                    5.5%
+                                </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Detail Drawer (Right side, fixed width) -->
+<aside class="w-[360px] bg-surface border-l border-outline-variant shadow-[-4px_0_12px_rgba(0,0,0,0.03)] flex flex-col z-30 overflow-y-auto">
+<!-- Drawer Header -->
+<div class="p-stack-md border-b border-outline-variant flex items-center justify-between sticky top-0 bg-surface/95 backdrop-blur z-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+<h2 class="font-title-sm text-title-sm font-bold text-on-surface">Chi tiết tài sản</h2>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container p-1 rounded-full transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Drawer Content -->
+<div class="p-stack-md flex flex-col gap-stack-lg">
+<!-- Property Image -->
+<div class="w-full aspect-video bg-surface-dim rounded-lg overflow-hidden border border-outline-variant relative">
+<!-- Background image simulation via a colored div for the prompt -->
+<div class="w-full h-full bg-slate-800" data-alt="A high-resolution, professional architectural photograph of a modern commercial real estate building in a bustling city district during golden hour. The building features sleek glass facades reflecting the warm sunlight, grounded by clean concrete structural elements. The aesthetic is highly polished and corporate, suitable for an institutional investment prospectus, utilizing a balanced color palette of warm ambers and cool structural blues. The lighting emphasizes the building's geometric precision and premium market positioning."></div>
+<div class="absolute top-2 right-2 bg-[#dcfce7] text-[#166534] px-2 py-1 rounded-DEFAULT font-metric-sm text-metric-sm border border-[#bbf7d0] shadow-sm">
+                            High Yield Potential
+                        </div>
+</div>
+<!-- Core Metrics Header -->
+<div>
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-metric-sm text-metric-sm text-on-surface-variant">1,248 Kết quả</span>
+<span class="bg-surface-dim px-2 py-0.5 rounded-DEFAULT text-xs text-on-surface font-medium">Mixed Use</span>
+</div>
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface mb-2 leading-tight">27B Le Thanh Ton</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                            District 1, Ho Chi Minh City
+                        </p>
+</div>
+<!-- Highlight Metrics Grid -->
+<div class="grid grid-cols-2 gap-unit">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-DEFAULT p-stack-sm flex flex-col justify-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1">Giá yêu cầu</span>
+<span class="font-metric-lg text-metric-lg text-on-surface text-primary">24B <span class="text-sm text-on-surface-variant">VND</span></span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-DEFAULT p-stack-sm flex flex-col justify-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1">Diện tích sàn</span>
+<span class="font-metric-lg text-metric-lg text-on-surface">210 <span class="text-sm text-on-surface-variant">m²</span></span>
+</div>
+</div>
+<!-- Detailed Data List -->
+<div class="border border-outline-variant rounded-DEFAULT bg-surface-container-lowest overflow-hidden">
+<div class="px-stack-sm py-2 border-b border-outline-variant bg-surface-container flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-surface">Thông số tài chính</span>
+</div>
+<div class="px-stack-sm py-2 flex justify-between items-center border-b border-outline-variant border-dashed">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Giá mỗi m²</span>
+<span class="font-metric-sm text-metric-sm text-on-surface">114,285,714 VND</span>
+</div>
+<div class="px-stack-sm py-2 flex justify-between items-center border-b border-outline-variant border-dashed">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Tiền thuê hàng năm</span>
+<span class="font-metric-sm text-metric-sm text-on-surface">2,208,000,000 VND</span>
+</div>
+<div class="px-stack-sm py-2 flex justify-between items-center border-b border-outline-variant border-dashed bg-primary-fixed/10">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">ROI tính toán</span>
+<span class="font-metric-sm text-metric-sm font-bold text-[#166534]">9.2%</span>
+</div>
+<div class="px-stack-sm py-2 flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Điểm rủi ro</span>
+<div class="flex items-center gap-2">
+<div class="w-16 h-2 bg-surface-dim rounded-full overflow-hidden">
+<div class="w-1/3 h-full bg-[#166534]"></div>
+</div>
+<span class="font-metric-sm text-metric-sm text-on-surface">Thấp</span>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex flex-col gap-unit mt-auto pt-stack-md">
+<button class="w-full bg-primary-container text-on-primary py-2 px-4 rounded-DEFAULT font-title-sm text-title-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">Chạy phân tích kịch bản <span class="material-symbols-outlined text-sm">arrow_forward</span></button>
+<button class="w-full bg-surface border border-outline-variant text-on-surface py-2 px-4 rounded-DEFAULT font-title-sm text-title-sm hover:bg-surface-container transition-colors flex items-center justify-center gap-2">Xem bản cáo bạch đầy đủ</button>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>

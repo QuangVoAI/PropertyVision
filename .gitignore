@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node/Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env
+npm-debug.log
+
+# Database
+*.db
+*.db-journal
+data/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Temporary files
+*.tmp
+*~
+.~*
+
+# Environment
+.env
+.env.local
