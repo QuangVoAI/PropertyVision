@@ -37,6 +37,9 @@ npm-debug.log
 *.db-journal
 data/
 
+# Design files
+Web/
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints
