@@ -1,42 +1,73 @@
 # PropertyVision BI
 
-PropertyVision là web app BI cho phân tích bất động sản, dự đoán giá, ROI, quy hoạch và trợ lý hỏi đáp dữ liệu.
+PropertyVision BI is a full-stack real estate intelligence application for **Ho Chi Minh City** and **Hanoi**, built for business intelligence, price prediction, ROI analysis, planning-risk exploration, and executive-style decision support.
 
-Repo này đã được dọn lại để **clone về là chạy được**. Dataset chính được ưu tiên tải trực tiếp từ Hugging Face, nên máy clone mới không bắt buộc phải có sẵn file CSV local.
+The project combines:
 
-## Cấu trúc
+- a **FastAPI backend** for analytics, prediction, planning, and assistant endpoints
+- a **React + Vite frontend** for dashboards and interactive exploration
+- a **Hugging Face-hosted processed dataset** that can be pulled automatically on first backend run
+
+## Highlights
+
+- Unified analytics across **Ho Chi Minh City** and **Hanoi**
+- Market KPIs, district comparison, and property-type breakdowns
+- Price prediction with machine learning
+- What-if simulation and future recommendation flows
+- GIS and planning-oriented views
+- Retrieval-based assistant with optional Ollama integration
+
+## Project Structure
 
 ```text
 PropertyVision/
-├── backend/                  FastAPI API
-├── frontend/                 React + Vite UI
-├── data/                     SQLite demo database
-├── datasets/
-│   ├── processed/            Dataset chính để app chạy
-│   └── raw/                  Dataset gốc trước khi hợp nhất
-├── docs/                     Tài liệu dự án
-├── notebooks/                Notebook xử lý dữ liệu
-├── app.py                    Gợi ý lệnh chạy nhanh
+├── backend/                    FastAPI application
+├── frontend/                   React + Vite frontend
+├── datasets/                   Local dataset workspace
+│   ├── README.md               Dataset card / dataset notes
+│   └── raw/                    Optional raw reference files
+├── data/                       SQLite files generated at runtime
+├── docs/                       Project documentation
+├── notebooks/                  Data exploration notebooks
+├── app.py                      Quick run note
 ├── README.md
 └── requirements.txt
 ```
 
-## File quan trọng
+## Dataset Behavior
 
-- `backend/main.py`: backend chính của hệ thống.
-- `frontend/src/main.jsx`: giao diện dashboard.
-- `datasets/processed/clean_dataset.csv`: fallback dataset local nếu không tải được từ Hugging Face.
-- `data/propertyvision.db`: SQLite dùng cho planning, ETL và dữ liệu phát sinh khi chạy app.
-- `docs/BASELINE.md`: baseline kỹ thuật.
-- `docs/DEMO_SCRIPT.md`: kịch bản demo.
-- `docs/PRESENTATION_OUTLINE.md`: khung thuyết trình.
-- `docs/UI_DESIGN_SPEC.md`: đặc tả UI.
+The application is configured so that **cloning the repository is enough to get started**.
 
-## Chạy dự án
+When the backend starts:
 
-### Backend
+1. it tries to download `clean_dataset.csv` from Hugging Face
+2. it stores the file locally at:
 
-macOS/Linux:
+```text
+datasets/clean_dataset.csv
+```
+
+3. if the download is unavailable but `datasets/clean_dataset.csv` already exists, it uses that local file
+4. if neither is available, it falls back to the raw reference CSV files in `datasets/raw/`
+
+Hugging Face dataset:
+
+- https://huggingface.co/datasets/SpringWang08/hanoi-hcmc-real-estate
+
+This means a fresh clone can run without manually copying the processed dataset into the repo.
+
+## Quick Start
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/QuangVoAI/PropertyVision.git
+cd PropertyVision
+```
+
+### 2. Start the backend
+
+macOS / Linux:
 
 ```bash
 python -m venv .venv
@@ -54,15 +85,13 @@ pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-Backend chạy tại `http://localhost:8000`.
+Backend:
 
-Khi khởi động:
+```text
+http://localhost:8000
+```
 
-- app sẽ ưu tiên tải dataset từ Hugging Face repo `SpringWang08/hanoi-hcmc-real-estate`
-- nếu tải lỗi nhưng máy vẫn có `datasets/processed/clean_dataset.csv`, app sẽ dùng file local
-- nếu cả hai đều không có, backend mới fallback sang dữ liệu raw trong `datasets/raw/`
-
-### Frontend
+### 3. Start the frontend
 
 ```bash
 cd frontend
@@ -70,50 +99,42 @@ npm install
 npm run dev
 ```
 
-Frontend chạy tại `http://localhost:5173`.
-
-## Dữ liệu
-
-- App ưu tiên đọc dataset từ Hugging Face:
-  `https://huggingface.co/datasets/SpringWang08/hanoi-hcmc-real-estate`
-- Fallback local là `datasets/processed/clean_dataset.csv`.
-- Hai file trong `datasets/raw/` được giữ lại làm nguồn gốc tham chiếu và dự phòng.
-- Một phần trường của dữ liệu Hà Nội đã được chuẩn hóa/fill theo rule-based preprocessing để thống nhất schema phục vụ demo.
-
-Nếu muốn chạy hoàn toàn offline, chỉ cần giữ sẵn:
+Frontend:
 
 ```text
-datasets/processed/clean_dataset.csv
+http://localhost:5173
 ```
 
-Nếu chạy online bình thường sau khi clone, bạn không cần tự tải CSV thủ công.
+## First-Run Experience
 
-## Tính năng chính
+On the first backend run, the app may spend a short moment downloading the processed dataset from Hugging Face into `datasets/clean_dataset.csv`.
 
-- Dashboard KPI thị trường bất động sản.
-- Phân tích district và property type.
-- Dự đoán giá bằng Random Forest.
-- What-if simulation và future recommendation.
-- GIS/planning map.
-- Assistant với retrieval fallback và hỗ trợ Ollama khi có local model.
+After that:
 
-## Tài liệu
+- the file remains available locally
+- subsequent backend runs reuse the downloaded file
+- the repository stays clean because the downloaded dataset file is ignored by Git
 
-- [BASELINE.md](docs/BASELINE.md)
-- [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
-- [PRESENTATION_OUTLINE.md](docs/PRESENTATION_OUTLINE.md)
-- [UI_DESIGN_SPEC.md](docs/UI_DESIGN_SPEC.md)
+## Key Files
 
-## Ghi chú dọn repo
+- `backend/main.py`: primary backend entrypoint
+- `frontend/src/main.jsx`: main frontend app
+- `datasets/README.md`: local dataset card and dataset notes
+- `docs/BASELINE.md`: technical baseline
+- `docs/DEMO_SCRIPT.md`: guided demo flow
+- `docs/PRESENTATION_OUTLINE.md`: presentation structure
+- `docs/UI_DESIGN_SPEC.md`: UI design reference
 
-- Đã bỏ các file trùng hoặc file tạm như `README 2.md`, `backend/main 2.py`, `merge_datasets.py`.
-- Repo hiện chỉ giữ một `README.md` làm đầu mối hướng dẫn chính.
+## Documentation
 
-## Quy trình nhanh sau khi clone
+- [Technical Baseline](docs/BASELINE.md)
+- [Demo Script](docs/DEMO_SCRIPT.md)
+- [Presentation Outline](docs/PRESENTATION_OUTLINE.md)
+- [UI Design Spec](docs/UI_DESIGN_SPEC.md)
 
-1. Clone repo.
-2. Tạo virtual environment.
-3. `pip install -r requirements.txt`
-4. Chạy `uvicorn backend.main:app --reload`
-5. Mở terminal khác, vào `frontend/`, chạy `npm install` rồi `npm run dev`
-6. Mở `http://localhost:5173`
+## Notes
+
+- `data/` is runtime-generated and not required to be present before startup.
+- `datasets/clean_dataset.csv` is downloaded automatically and is not committed.
+- `datasets/raw/` is kept only as an optional fallback/reference layer.
+- Ollama is optional. If no local model is available, the assistant still returns retrieval-based fallback responses.

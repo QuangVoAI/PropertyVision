@@ -30,9 +30,10 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-MERGED_DATA_PATH = ROOT_DIR / "datasets" / "processed" / "clean_dataset.csv"
-DATA_PATH = ROOT_DIR / "datasets" / "raw" / "clean_data.csv"
-HANOI_DATA_PATH = ROOT_DIR / "datasets" / "raw" / "clean_hanoi.csv"
+DATASETS_DIR = ROOT_DIR / "datasets"
+MERGED_DATA_PATH = DATASETS_DIR / "clean_dataset.csv"
+DATA_PATH = DATASETS_DIR / "raw" / "clean_data.csv"
+HANOI_DATA_PATH = DATASETS_DIR / "raw" / "clean_hanoi.csv"
 DB_PATH = ROOT_DIR / "data" / "propertyvision.db"
 HF_DATASET_REPO = "SpringWang08/hanoi-hcmc-real-estate"
 HF_DATASET_FILENAME = "clean_dataset.csv"
@@ -276,11 +277,13 @@ def connect_db() -> sqlite3.Connection:
 
 
 def resolve_dataset_path() -> Path:
+    DATASETS_DIR.mkdir(parents=True, exist_ok=True)
     try:
         downloaded_path = hf_hub_download(
             repo_id=HF_DATASET_REPO,
             filename=HF_DATASET_FILENAME,
             repo_type="dataset",
+            local_dir=DATASETS_DIR,
         )
         return Path(downloaded_path)
     except Exception:
@@ -999,7 +1002,7 @@ def methodology() -> dict[str, Any]:
     return {
         "problem": "Doanh nghiệp cần hệ thống MIS/DSS/EIS để dự đoán giá bất động sản, so sánh ROI, kiểm soát rủi ro pháp lý/quy hoạch và chọn chiến lược đầu tư.",
         "data": {
-            "primary_dataset": "datasets/processed/clean_dataset.csv",
+            "primary_dataset": "datasets/clean_dataset.csv",
             "raw_inputs": ["datasets/raw/clean_data.csv", "datasets/raw/clean_hanoi.csv"],
             "public_data_hub": PUBLIC_SOURCES,
             "governance": "Nguồn công khai được cache, ghi nguồn, timestamp và confidence score để demo ổn định.",
@@ -1388,7 +1391,7 @@ def analytics_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
                     f"giá/m2 {row.price_m2_million:.1f} triệu, điểm cơ hội {row.opportunity_score:.1f}/100."
                 ),
                 "source_name": "PropertyVision BI mart",
-                "source_url": "datasets/processed/clean_dataset.csv",
+                "source_url": "datasets/clean_dataset.csv",
                 "district": row.district,
                 "city": city.iloc[0] if not city.empty else None,
             }
@@ -1403,7 +1406,7 @@ def analytics_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
                     f"giá/m2 {row.price_m2_million:.1f} triệu, diện tích TB {row.avg_area:.1f} m2."
                 ),
                 "source_name": "PropertyVision segment mart",
-                "source_url": "datasets/processed/clean_dataset.csv",
+                "source_url": "datasets/clean_dataset.csv",
                 "city": city_mode.iloc[0] if not city_mode.empty else None,
             }
         )

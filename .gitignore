@@ -37,6 +37,10 @@ npm-debug.log
 *.db-journal
 data/
 
+# Downloaded dataset cache/files
+datasets/.cache/
+datasets/clean_dataset.csv
+
 # Design files
 Web/
 
