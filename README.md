@@ -78,6 +78,8 @@ cd PropertyVision
 
 ### 2. Start the backend
 
+First, start the Backend and connect to the database by executing the following scripts
+
 macOS / Linux:
 
 ```bash
@@ -103,6 +105,8 @@ http://localhost:8000
 ```
 
 ### 3. Start the frontend
+
+Once the Backend is ready, initialize the Frontend interface using the command sequence below
 
 ```bash
 cd frontend
