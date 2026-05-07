@@ -43,6 +43,7 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODELS = ["qwen2.5:14b", "llama3.1:latest", "llama3:latest"]
 DEFAULT_CITY = "TP Hồ Chí Minh"
 CITY_LABELS = ["TP Hồ Chí Minh", "Hà Nội"]
+LAND_TYPES = {"Đất thổ cư", "Đất dự án, Khu dân cư", "Đất nông nghiệp, kho bãi"}
 CITY_CENTERS = {
     "TP Hồ Chí Minh": {"latitude": 10.7769, "longitude": 106.7009, "zoom": 10},
     "Hà Nội": {"latitude": 21.0285, "longitude": 105.8542, "zoom": 11},
@@ -222,6 +223,10 @@ def clean_value(value: Any) -> Any:
     return value
 
 
+def clamp_int(value: float, lower: int, upper: int) -> int:
+    return int(max(lower, min(upper, round(value))))
+
+
 def records(df: pd.DataFrame) -> list[dict[str, Any]]:
     return [{key: clean_value(value) for key, value in row.items()} for row in df.to_dict(orient="records")]
 
@@ -276,6 +281,155 @@ def connect_db() -> sqlite3.Connection:
     return con
 
 
+def infer_residential_floors(area: float, property_type: str, price_per_m2: float) -> int:
+    if property_type in LAND_TYPES:
+        return 0
+    if property_type == "Biệt thự, Villa":
+        return 3 if area >= 160 else 2 if area >= 90 else 1
+    if property_type == "Nhà mặt tiền":
+        if area < 30:
+            return 4
+        return 5 if price_per_m2 >= 180 * VND_MILLION and area >= 40 else 4 if area >= 45 else 3
+    return 4 if area >= 45 else 3 if area >= 25 else 2
+
+
+def infer_residential_bedrooms(area: float, property_type: str, floors: int) -> int:
+    if property_type in LAND_TYPES:
+        return 0
+    if property_type == "Biệt thự, Villa":
+        return clamp_int((floors + 1) + area / 70, 3, 8)
+    if property_type == "Nhà mặt tiền":
+        return clamp_int((floors - 1) + area / 55, 2, 8)
+    return clamp_int((floors - 1) + area / 45, 1, 7)
+
+
+def bedroom_bounds(area: float, property_type: str, floors: int) -> tuple[int, int, int]:
+    if property_type in LAND_TYPES:
+        return 0, 0, 0
+
+    target = infer_residential_bedrooms(area, property_type, floors)
+    lower = max(1, target - 1)
+    upper = target + 1
+
+    if area < 35:
+        upper = min(upper, 4 if property_type == "Nhà mặt tiền" else 3)
+    if floors <= 2:
+        upper = min(upper, 6 if property_type == "Biệt thự, Villa" else 5)
+
+    return lower, max(lower, upper), target
+
+
+def infer_residential_toilets(area: float, property_type: str, bedrooms: int, floors: int) -> int:
+    if property_type in LAND_TYPES:
+        return 0
+    if property_type == "Biệt thự, Villa":
+        return clamp_int(max(math.ceil(bedrooms * 0.7), floors + 1, 2 + area / 90), 2, 7)
+    return clamp_int(
+        max(math.ceil(bedrooms / 2), floors - 2 + (1 if area >= 40 else 0) + (1 if area >= 120 else 0)),
+        1,
+        6,
+    )
+
+
+def toilet_bounds(area: float, property_type: str, bedrooms: int, floors: int) -> tuple[int, int, int]:
+    if property_type in LAND_TYPES:
+        return 0, 0, 0
+
+    target = infer_residential_toilets(area, property_type, bedrooms, floors)
+    lower = max(1, target - 1)
+    upper = target + 1
+
+    if bedrooms >= 6 or floors >= 5:
+        lower = max(lower, 3)
+    elif bedrooms >= 3 or floors >= 3:
+        lower = max(lower, 2)
+
+    if area < 35:
+        upper = min(upper, 4 if property_type == "Nhà mặt tiền" else 3)
+
+    upper = min(upper, bedrooms if property_type == "Biệt thự, Villa" else bedrooms + 1)
+    upper = min(upper, 7 if property_type == "Biệt thự, Villa" else 6)
+
+    return lower, max(lower, upper), target
+
+
+def normalize_dataset_dates(df: pd.DataFrame) -> pd.DataFrame:
+    result = df.copy()
+    result["date"] = pd.to_datetime(result["date"], errors="coerce")
+    synthetic_span = result["date"].max() - result["date"].min()
+    if pd.notna(synthetic_span) and synthetic_span.days > 3650:
+        month_offsets = np.arange(len(result)) % 48
+        result["date"] = pd.to_datetime("2022-01-01") + pd.to_timedelta(month_offsets * 30, unit="D")
+    return result
+
+
+def normalize_property_types(df: pd.DataFrame) -> pd.DataFrame:
+    result = df.copy()
+    area = pd.to_numeric(result.get("area"), errors="coerce").fillna(0)
+    price_per_m2 = pd.to_numeric(result.get("price_per_m2"), errors="coerce").fillna(0)
+    city = result.get("city", "").astype(str)
+
+    oversized_residential = (
+        city.eq("Hà Nội")
+        & result["Type of House"].eq("Biệt thự, Villa")
+        & area.ge(1000)
+    )
+
+    result.loc[oversized_residential & price_per_m2.ge(30 * VND_MILLION), "Type of House"] = "Đất thổ cư"
+    result.loc[oversized_residential & price_per_m2.lt(30 * VND_MILLION), "Type of House"] = "Đất dự án, Khu dân cư"
+    return result
+
+
+def sanitize_property_fields(df: pd.DataFrame) -> pd.DataFrame:
+    result = df.copy()
+    result["bedrooms_num"] = result["Bedrooms"].map(parse_number)
+    result["toilets_num"] = result["Toilets"].map(parse_number)
+    result["floor_num"] = pd.to_numeric(result["Total Floors"], errors="coerce")
+
+    for index, row in result.iterrows():
+        property_type = str(row.get("Type of House") or "").strip()
+        area = float(row.get("area") or 0)
+        price_per_m2 = float(row.get("price_per_m2") or 0)
+
+        if property_type in LAND_TYPES:
+            result.at[index, "Bedrooms"] = "0 phòng"
+            result.at[index, "Toilets"] = "0 WC"
+            result.at[index, "Total Floors"] = 0
+            result.at[index, "bedrooms_num"] = 0
+            result.at[index, "toilets_num"] = 0
+            result.at[index, "floor_num"] = 0
+            continue
+
+        floors = row["floor_num"]
+        if pd.isna(floors) or floors < 1:
+            floors = infer_residential_floors(area, property_type, price_per_m2)
+        else:
+            floors = clamp_int(floors, 1, 7)
+
+        bedrooms = row["bedrooms_num"]
+        bedroom_lower, bedroom_upper, inferred_bedrooms = bedroom_bounds(area, property_type, int(floors))
+        if pd.isna(bedrooms) or bedrooms < 1:
+            bedrooms = inferred_bedrooms
+        else:
+            bedrooms = clamp_int(bedrooms, bedroom_lower, bedroom_upper)
+
+        toilets = row["toilets_num"]
+        toilet_lower, toilet_upper, inferred_toilets = toilet_bounds(area, property_type, int(bedrooms), int(floors))
+        if pd.isna(toilets) or toilets < 1:
+            toilets = inferred_toilets
+        else:
+            toilets = clamp_int(toilets, toilet_lower, toilet_upper)
+
+        result.at[index, "Bedrooms"] = f"{int(bedrooms)} phòng"
+        result.at[index, "Toilets"] = f"{int(toilets)} WC"
+        result.at[index, "Total Floors"] = int(floors)
+        result.at[index, "bedrooms_num"] = int(bedrooms)
+        result.at[index, "toilets_num"] = int(toilets)
+        result.at[index, "floor_num"] = int(floors)
+
+    return result
+
+
 def resolve_dataset_path() -> Path:
     DATASETS_DIR.mkdir(parents=True, exist_ok=True)
     try:
@@ -322,14 +476,9 @@ def load_data() -> pd.DataFrame:
             hanoi_df = hanoi_df[base_df.columns.tolist() + ["city"]]
 
         df = pd.concat([base_df, hanoi_df], ignore_index=True, sort=False)
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    synthetic_span = df["date"].max() - df["date"].min()
-    if pd.notna(synthetic_span) and synthetic_span.days > 3650:
-        month_offsets = np.arange(len(df)) % 48
-        df["date"] = pd.to_datetime("2022-01-01") + pd.to_timedelta(month_offsets * 30, unit="D")
-    df["bedrooms_num"] = df["Bedrooms"].map(parse_number)
-    df["toilets_num"] = df["Toilets"].map(parse_number)
-    df["floor_num"] = pd.to_numeric(df["Total Floors"], errors="coerce")
+    df = normalize_dataset_dates(df)
+    df = normalize_property_types(df)
+    df = sanitize_property_fields(df)
     df["price_billion"] = df["price_vnd"] / VND_BILLION
     df["price_per_m2_million"] = df["price_per_m2"] / VND_MILLION
     df["roi_pct"] = df["ROI"] * 100

@@ -56,6 +56,17 @@ Hugging Face dataset:
 
 This means a fresh clone can run without manually copying the processed dataset into the repo.
 
+## Data Quality Note
+
+The processed CSV is not a raw export. Before the backend serves it, the app applies a rule-based normalization pass so the dataset stays internally consistent and demo-ready:
+
+- `Bedrooms`, `Toilets`, and `Total Floors` are normalized by property type, area, and floor count
+- land-type records are forced to `0` bedrooms, `0` toilets, and `0` floors
+- Hanoi locations are aligned to real wards, communes, and townships within the correct districts
+- dates are constrained to a realistic analysis window so trend charts remain meaningful
+
+These rules are designed for BI exploration and portfolio demos, not as a claim of ground-truth property labels.
+
 ## Quick Start
 
 ### 1. Clone the repository
