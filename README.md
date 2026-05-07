@@ -1,253 +1,119 @@
 # PropertyVision BI
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue)](https://www.python.org/)
-[![React](https://img.shields.io/badge/React-18.x-blue)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green)](https://fastapi.tiangolo.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+PropertyVision là web app BI cho phân tích bất động sản, dự đoán giá, ROI, quy hoạch và trợ lý hỏi đáp dữ liệu.
 
-## 📋 Giới thiệu dự án
+Repo này đã được dọn lại để **clone về là chạy được**. Dataset chính được ưu tiên tải trực tiếp từ Hugging Face, nên máy clone mới không bắt buộc phải có sẵn file CSV local.
 
-PropertyVision là một hệ thống **Business Intelligence và Decision Support** cấp doanh nghiệp dành cho lĩnh vực bất động sản tại TP.HCM. Nền tảng tích hợp phân tích thị trường, quy hoạch địa lý, mô hình dự đoán, và những insight được hỗ trợ bởi AI để giúp đưa ra quyết định đầu tư dựa trên dữ liệu.
+## Cấu trúc
 
-### Tính năng chính
-
-- 📊 **Bảng điều khiển quản lý**: KPI thực tế, chỉ số ROI, phân tích giá trị thị trường
-- 🗺️ **Tích hợp bản đồ GIS**: Hình dung quy hoạch và rủi ro theo quận
-- 🤖 **Trợ lý AI**: RAG pháp lý/quy hoạch với hỗ trợ LLM cục bộ (Ollama)
-- 🔮 **Dự đoán giá**: Mô hình Random Forest với các yếu tố rủi ro
-- 📈 **Mô phỏng What-If**: Dự báo đa tình huống với khoảng tin cậy
-- 🔍 **Thông tin thị trường**: Phân tích đa chiều theo quận, loại hình bất động sản, mức giá
-- 🔄 **ETL thực tế**: Quy trình dữ liệu tự động và phục hợp tăng dần
-- 📱 **Giao diện đáp ứng**: Frontend React + Vite với hình dung tương tác
-
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| Backend | FastAPI, Python 3.10+ |
-| Frontend | React 18, Vite, Axios |
-| Database | SQLite |
-| Visualization | Recharts, Leaflet |
-| ML/AI | Scikit-learn (Random Forest), Ollama (Local LLM) |
-| Data Processing | Pandas, NumPy |
-
----
-
-## 📦 Prerequisites
-
-- Python 3.10+
-- Node.js 16+ & npm
-- Git
-- (Optional) Ollama for local LLM support
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone & Thiết lập
-
-```bash
-git clone https://github.com/QuangVoAI/PropertyVision.git
-cd PropertyVision
-
-# Tạo môi trường ảo
-python -m venv .venv
-source .venv/bin/activate  # Trên Windows: .venv\Scripts\activate
+```text
+PropertyVision/
+├── backend/                  FastAPI API
+├── frontend/                 React + Vite UI
+├── data/                     SQLite demo database
+├── datasets/
+│   ├── processed/            Dataset chính để app chạy
+│   └── raw/                  Dataset gốc trước khi hợp nhất
+├── docs/                     Tài liệu dự án
+├── notebooks/                Notebook xử lý dữ liệu
+├── app.py                    Gợi ý lệnh chạy nhanh
+├── README.md
+└── requirements.txt
 ```
 
-### 2. Cài đặt dependencies
+## File quan trọng
+
+- `backend/main.py`: backend chính của hệ thống.
+- `frontend/src/main.jsx`: giao diện dashboard.
+- `datasets/processed/clean_dataset.csv`: fallback dataset local nếu không tải được từ Hugging Face.
+- `data/propertyvision.db`: SQLite dùng cho planning, ETL và dữ liệu phát sinh khi chạy app.
+- `docs/BASELINE.md`: baseline kỹ thuật.
+- `docs/DEMO_SCRIPT.md`: kịch bản demo.
+- `docs/PRESENTATION_OUTLINE.md`: khung thuyết trình.
+- `docs/UI_DESIGN_SPEC.md`: đặc tả UI.
+
+## Chạy dự án
+
+### Backend
+
+macOS/Linux:
 
 ```bash
-# Backend
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+uvicorn backend.main:app --reload
+```
 
-# Frontend
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn backend.main:app --reload
+```
+
+Backend chạy tại `http://localhost:8000`.
+
+Khi khởi động:
+
+- app sẽ ưu tiên tải dataset từ Hugging Face repo `SpringWang08/hanoi-hcmc-real-estate`
+- nếu tải lỗi nhưng máy vẫn có `datasets/processed/clean_dataset.csv`, app sẽ dùng file local
+- nếu cả hai đều không có, backend mới fallback sang dữ liệu raw trong `datasets/raw/`
+
+### Frontend
+
+```bash
 cd frontend
 npm install
-```
-
-### 3. Khởi động dịch vụ
-
-**Terminal 1 - Backend:**
-```bash
-uvicorn backend.main:app --reload
-# Backend tại: http://localhost:8000
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
 npm run dev
-# Frontend tại: http://localhost:5173
 ```
 
-**Terminal 3 - LLM cục bộ (Tùy chọn):**
-```bash
-ollama serve
-ollama run qwen2.5:14b
+Frontend chạy tại `http://localhost:5173`.
+
+## Dữ liệu
+
+- App ưu tiên đọc dataset từ Hugging Face:
+  `https://huggingface.co/datasets/SpringWang08/hanoi-hcmc-real-estate`
+- Fallback local là `datasets/processed/clean_dataset.csv`.
+- Hai file trong `datasets/raw/` được giữ lại làm nguồn gốc tham chiếu và dự phòng.
+- Một phần trường của dữ liệu Hà Nội đã được chuẩn hóa/fill theo rule-based preprocessing để thống nhất schema phục vụ demo.
+
+Nếu muốn chạy hoàn toàn offline, chỉ cần giữ sẵn:
+
+```text
+datasets/processed/clean_dataset.csv
 ```
 
-> **Lưu ý**: Nếu Ollama không có sẵn, RAG sẽ vẫn hoạt động với các mô hình dự phòng (`llama3.1`, `llama3`). Nếu không có LLM nào, hệ thống sẽ trả về bối cảnh được lấy với các trích dẫn.
+Nếu chạy online bình thường sau khi clone, bạn không cần tự tải CSV thủ công.
 
----
+## Tính năng chính
 
-## 📁 Cấu trúc dự án
+- Dashboard KPI thị trường bất động sản.
+- Phân tích district và property type.
+- Dự đoán giá bằng Random Forest.
+- What-if simulation và future recommendation.
+- GIS/planning map.
+- Assistant với retrieval fallback và hỗ trợ Ollama khi có local model.
 
-```
-PropertyVision/
-├── backend/
-│   ├── __init__.py
-│   └── main.py              # Ứng dụng FastAPI
-├── frontend/
-│   ├── src/
-│   │   ├── main.jsx         # React entry point
-│   │   └── styles.css       # Kiểu toàn cầu
-│   ├── index.html
-│   ├── vite.config.js
-│   └── package.json
-├── data/
-│   └── propertyvision.db    # Database SQLite
-├── requirements.txt         # Các dependency Python
-├── README.md               # Tệp này
-├── BASELINE.md             # Thông số kỹ thuật
-├── DEMO_SCRIPT.md          # Hướng dẫn demo
-└── PRESENTATION_OUTLINE.md # Hướng dẫn trình bày
-```
+## Tài liệu
 
----
+- [BASELINE.md](docs/BASELINE.md)
+- [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
+- [PRESENTATION_OUTLINE.md](docs/PRESENTATION_OUTLINE.md)
+- [UI_DESIGN_SPEC.md](docs/UI_DESIGN_SPEC.md)
 
-## 🎯 Các module chính
+## Ghi chú dọn repo
 
-### Dashboard & Phân tích
-- **Bảng điều khiển quản lý**: Chỉ số chính, phân tích ROI, giá trị thị trường, quận hứa hẹn nhất
-- **Thông tin thị trường**: Phân tích so sánh theo quận và loại hình bất động sản
-- **Phân tích Slice & Dice**: Phân tích OLAP đa chiều
+- Đã bỏ các file trùng hoặc file tạm như `README 2.md`, `backend/main 2.py`, `merge_datasets.py`.
+- Repo hiện chỉ giữ một `README.md` làm đầu mối hướng dẫn chính.
 
-### Tính năng nâng cao
-- **Chiến lược đầu tư**: Chỉ số cơ hội và engine đề xuất
-- **Bản đồ GIS**: Hình dung quy hoạch và rủi ro tương tác
-- **Dự đoán giá**: Ước tính giá được hỗ trợ bởi ML với đánh giá rủi ro
-- **Mô phỏng What-If**: Lập kế hoạch tình huống với các tham số ngân sách và tăng trưởng
-- **Dự báo đa tình huống**: Dự báo 5-10 năm (bi quan/cơ bản/lạc quan)
-- **RAG Pháp lý/Quy hoạch**: AI hội thoại với truy xuất tài liệu
+## Quy trình nhanh sau khi clone
 
-### Quản lý dữ liệu
-- **Quy trình dữ liệu**: Làm mới thủ công/theo lịch trình với ghi nhật ký ETL
-- **Phục hợp tăng dần**: Đồng bộ hóa dữ liệu proxy giao dịch
-- **Ánh xạ MIS/DSS/EIS**: Khung hệ thống thông tin doanh nghiệp
-
----
-
-## 🔌 Các điểm cuối API
-
-| Phương thức | Điểm cuối | Mục đích |
-|--------|----------|---------|
-| `GET` | `/api/health` | Kiểm tra sức khỏe |
-| `GET` | `/api/metadata` | Siêu dữ liệu hệ thống |
-| `POST` | `/api/analytics` | Truy vấn phân tích |
-| `POST` | `/api/slice-dice` | Phân tích đa chiều |
-| `POST` | `/api/predict` | Dự đoán giá |
-| `POST` | `/api/what-if` | Engine mô phỏng |
-| `POST` | `/api/assistant` | Q&A dựa trên RAG |
-| `GET` | `/api/map/districts` | Dữ liệu quận GIS |
-| `GET` | `/api/planning/zones` | Dữ liệu vùng quy hoạch |
-| `POST` | `/api/etl/run` | Kích hoạt quy trình dữ liệu |
-| `GET` | `/api/etl/status` | Trạng thái công việc ETL |
-
-Xem `BASELINE.md` để biết tài liệu API chi tiết.
-
----
-
-## 📊 Nguồn dữ liệu
-
-Hệ thống tích hợp dữ liệu công khai và mã nguồn mở:
-
-- **Cổng thông tin HCMGIS**: https://portal.hcmgis.vn/
-- **Cổng thông tin quy hoạch TP.HCM**: https://thongtinquyhoach.hochiminhcity.gov.vn
-- **Bộ dữ liệu Kaggle**:
-  - [Dữ liệu bất động sản HCMC 2025](https://www.kaggle.com/datasets/cnglmph/ho-chi-minh-city-real-estate-data-2025)
-  - [Định giá nhà ở HCM](https://www.kaggle.com/datasets/trnduythanhkhttt/housepricinghcm/data)
-
----
-
-## 📚 Tài liệu
-
-- **`BASELINE.md`**: Từ điển dữ liệu, công thức KPI, thông số kỹ thuật, ghi chú kiến trúc
-- **`DEMO_SCRIPT.md`**: Hướng dẫn demo từng bước
-- **`PRESENTATION_OUTLINE.md`**: Cấu trúc trình bày và các ý chính
-- **`UI_DESIGN_SPEC.md`**: Thông số kỹ thuật UI/UX
-
----
-
-## 🏗️ Kiến trúc
-
-```
-┌─────────────────────────────────────┐
-│   Frontend React (Vite)             │
-│   - Bảng điều khiển, Biểu đồ, Bản đồ          │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│   Backend FastAPI                   │
-│   - Engine phân tích                │
-│   - ML Pipeline                     │
-│   - Dịch vụ RAG                     │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│   Lớp dữ liệu                       │
-│   - Database SQLite                 │
-│   - ETL Pipeline                    │
-└─────────────────────────────────────┘
-               │
-        ┌──────┴──────┐
-        │             │
-   ┌────▼──┐    ┌────▼──────┐
-   │ Ollama │    │ Data APIs │
-   │ (LLM)  │    │ (GIS, etc)│
-   └────────┘    └───────────┘
-```
-
----
-
-## 🤝 Đóng góp
-
-Chúng tôi hoan nghênh các đóng góp! Vui lòng:
-
-1. Fork kho lưu trữ
-2. Tạo nhánh tính năng (`git checkout -b feature/AmazingFeature`)
-3. Commit thay đổi (`git commit -m 'Add some AmazingFeature'`)
-4. Push tới nhánh (`git push origin feature/AmazingFeature`)
-5. Mở Pull Request
-
----
-
-## 📝 Ghi chú phát triển
-
-- **Nhật ký Backend**: Kiểm tra đầu ra Uvicorn để tìm lỗi API
-- **Nhật ký Frontend**: Mở DevTools trình duyệt (F12)
-- **Database**: Tệp SQLite nằm tại `data/propertyvision.db`
-- **Dự phòng LLM**: Hệ thống giảm nhẹ thành công nếu Ollama không có sẵn
-
----
-
-## 📄 Giấy phép
-
-Dự án này được cấp phép theo Giấy phép MIT - xem tệp LICENSE để biết chi tiết.
-
----
-
-## 👥 Tác giả
-
-- **Trưởng dự án**: Quang Vo AI Team
-- **Kho lưu trữ**: https://github.com/QuangVoAI/PropertyVision
-
----
-
-## 🙋 Hỗ trợ
-
-Đối với các vấn đề, câu hỏi hoặc đề xuất:
-- Mở một [Issue](https://github.com/QuangVoAI/PropertyVision/issues)
-- Kiểm tra [Tài liệu](./BASELINE.md) hiện có
+1. Clone repo.
+2. Tạo virtual environment.
+3. `pip install -r requirements.txt`
+4. Chạy `uvicorn backend.main:app --reload`
+5. Mở terminal khác, vào `frontend/`, chạy `npm install` rồi `npm run dev`
+6. Mở `http://localhost:5173`

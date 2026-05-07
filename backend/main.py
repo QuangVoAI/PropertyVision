@@ -15,12 +15,14 @@ import pandas as pd
 import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from huggingface_hub import hf_hub_download
 from pydantic import BaseModel, Field
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import NearestNeighbors
 from sklearn.pipeline import Pipeline
@@ -28,12 +30,76 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT_DIR / "clean_data.csv"
+MERGED_DATA_PATH = ROOT_DIR / "datasets" / "processed" / "clean_dataset.csv"
+DATA_PATH = ROOT_DIR / "datasets" / "raw" / "clean_data.csv"
+HANOI_DATA_PATH = ROOT_DIR / "datasets" / "raw" / "clean_hanoi.csv"
 DB_PATH = ROOT_DIR / "data" / "propertyvision.db"
+HF_DATASET_REPO = "SpringWang08/hanoi-hcmc-real-estate"
+HF_DATASET_FILENAME = "clean_dataset.csv"
 VND_BILLION = 1_000_000_000
 VND_MILLION = 1_000_000
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODELS = ["qwen2.5:14b", "llama3.1:latest", "llama3:latest"]
+DEFAULT_CITY = "TP Hồ Chí Minh"
+CITY_LABELS = ["TP Hồ Chí Minh", "Hà Nội"]
+CITY_CENTERS = {
+    "TP Hồ Chí Minh": {"latitude": 10.7769, "longitude": 106.7009, "zoom": 10},
+    "Hà Nội": {"latitude": 21.0285, "longitude": 105.8542, "zoom": 11},
+}
+FALLBACK_DISTRICT_COORDS = {
+    "quận 1": {"latitude": 10.7756, "longitude": 106.7009},
+    "quận 3": {"latitude": 10.7829, "longitude": 106.6864},
+    "quận 4": {"latitude": 10.7579, "longitude": 106.7043},
+    "quận 5": {"latitude": 10.7540, "longitude": 106.6638},
+    "quận 6": {"latitude": 10.7460, "longitude": 106.6353},
+    "quận 7": {"latitude": 10.7342, "longitude": 106.7218},
+    "quận 8": {"latitude": 10.7243, "longitude": 106.6285},
+    "quận 10": {"latitude": 10.7722, "longitude": 106.6679},
+    "quận 11": {"latitude": 10.7631, "longitude": 106.6438},
+    "quận 12": {"latitude": 10.8678, "longitude": 106.6416},
+    "quận bình thạnh": {"latitude": 10.8106, "longitude": 106.7091},
+    "quận bình tân": {"latitude": 10.7659, "longitude": 106.6030},
+    "quận gò vấp": {"latitude": 10.8387, "longitude": 106.6653},
+    "quận phú nhuận": {"latitude": 10.7991, "longitude": 106.6800},
+    "quận tân bình": {"latitude": 10.8016, "longitude": 106.6520},
+    "quận tân phú": {"latitude": 10.7915, "longitude": 106.6279},
+    "huyện bình chánh": {"latitude": 10.6906, "longitude": 106.5955},
+    "huyện củ chi": {"latitude": 11.0047, "longitude": 106.5004},
+    "huyện hóc môn": {"latitude": 10.8894, "longitude": 106.5923},
+    "huyện nhà bè": {"latitude": 10.6953, "longitude": 106.7353},
+    "quận 2": {"latitude": 10.7873, "longitude": 106.7498},
+    "quận 9": {"latitude": 10.8428, "longitude": 106.8287},
+    "quận thủ đức": {"latitude": 10.8506, "longitude": 106.7550},
+    "cầu giấy": {"latitude": 21.0363, "longitude": 105.7906},
+    "ba đình": {"latitude": 21.0358, "longitude": 105.8142},
+    "bắc từ liêm": {"latitude": 21.0714, "longitude": 105.7706},
+    "thanh xuân": {"latitude": 20.9931, "longitude": 105.8048},
+    "hai bà trưng": {"latitude": 21.0059, "longitude": 105.8575},
+    "hoàn kiếm": {"latitude": 21.0281, "longitude": 105.8544},
+    "hoàng mai": {"latitude": 20.9740, "longitude": 105.8632},
+    "hà đông": {"latitude": 20.9714, "longitude": 105.7788},
+    "long biên": {"latitude": 21.0549, "longitude": 105.8885},
+    "nam từ liêm": {"latitude": 21.0123, "longitude": 105.7658},
+    "tây hồ": {"latitude": 21.0702, "longitude": 105.8188},
+    "đống đa": {"latitude": 21.0181, "longitude": 105.8295},
+    "thị xã sơn tây": {"latitude": 21.1405, "longitude": 105.5060},
+    "huyện ba vì": {"latitude": 21.1996, "longitude": 105.4234},
+    "huyện chương mỹ": {"latitude": 20.8860, "longitude": 105.6544},
+    "huyện gia lâm": {"latitude": 21.0288, "longitude": 105.9500},
+    "huyện hoài đức": {"latitude": 21.0336, "longitude": 105.7055},
+    "huyện mê linh": {"latitude": 21.1804, "longitude": 105.7077},
+    "huyện mỹ đức": {"latitude": 20.7458, "longitude": 105.7232},
+    "huyện phú xuyên": {"latitude": 20.7292, "longitude": 105.9088},
+    "huyện phúc thọ": {"latitude": 21.1174, "longitude": 105.5937},
+    "huyện quốc oai": {"latitude": 20.9950, "longitude": 105.6423},
+    "huyện sóc sơn": {"latitude": 21.2592, "longitude": 105.8486},
+    "huyện thanh oai": {"latitude": 20.8575, "longitude": 105.7698},
+    "huyện thanh trì": {"latitude": 20.9369, "longitude": 105.8418},
+    "huyện thường tín": {"latitude": 20.8416, "longitude": 105.8613},
+    "huyện thạch thất": {"latitude": 21.0471, "longitude": 105.5617},
+    "huyện đan phượng": {"latitude": 21.1054, "longitude": 105.6710},
+    "huyện đông anh": {"latitude": 21.1368, "longitude": 105.8460},
+}
 
 PUBLIC_SOURCES = [
     {
@@ -86,6 +152,7 @@ app.add_middleware(
 
 
 class Filters(BaseModel):
+    city: str | None = DEFAULT_CITY
     districts: list[str] = Field(default_factory=list)
     property_types: list[str] = Field(default_factory=list)
     price_min: float | None = None
@@ -126,6 +193,11 @@ class SliceDiceRequest(BaseModel):
     metric: str = "avg_roi"
 
 
+class FutureRecommendationRequest(WhatIfRequest):
+    filters: Filters = Field(default_factory=Filters)
+    top_k: int = Field(default=5, ge=1, le=10)
+
+
 def parse_number(value: object) -> float:
     if pd.isna(value):
         return np.nan
@@ -153,6 +225,42 @@ def records(df: pd.DataFrame) -> list[dict[str, Any]]:
     return [{key: clean_value(value) for key, value in row.items()} for row in df.to_dict(orient="records")]
 
 
+def filters_summary(filters: Filters) -> str:
+    parts: list[str] = []
+    if filters.city:
+        parts.append(filters.city)
+    if filters.districts:
+        parts.append(f"{len(filters.districts)} khu vực")
+    if filters.property_types:
+        parts.append(f"{len(filters.property_types)} loại tài sản")
+    if filters.price_max is not None:
+        parts.append(f"gia <= {filters.price_max:.1f} ty")
+    if filters.roi_min is not None:
+        parts.append(f"ROI >= {filters.roi_min:.1f}%")
+    return ", ".join(parts) if parts else "toan thi truong"
+
+
+@lru_cache(maxsize=1)
+def district_city_lookup() -> dict[str, str]:
+    df = load_data()
+    rows = (
+        df[["district", "city"]]
+        .dropna()
+        .drop_duplicates()
+        .itertuples(index=False)
+    )
+    return {str(row.district): str(row.city) for row in rows}
+
+
+def infer_document_city(title: str | None, source_name: str | None, source_url: str | None) -> str | None:
+    haystack = " ".join([str(title or ""), str(source_name or ""), str(source_url or "")]).lower()
+    if any(token in haystack for token in ["hcm", "hochiminh", "ho chi minh", "tp.hcm"]):
+        return "TP Hồ Chí Minh"
+    if any(token in haystack for token in ["ha noi", "hanoi", "hà nội"]):
+        return "Hà Nội"
+    return None
+
+
 def district_key(name: str) -> str:
     value = str(name).strip()
     for prefix in ["TP. Thủ Đức - ", "Quận ", "Huyện ", "Thành phố ", "TP. "]:
@@ -167,9 +275,50 @@ def connect_db() -> sqlite3.Connection:
     return con
 
 
+def resolve_dataset_path() -> Path:
+    try:
+        downloaded_path = hf_hub_download(
+            repo_id=HF_DATASET_REPO,
+            filename=HF_DATASET_FILENAME,
+            repo_type="dataset",
+        )
+        return Path(downloaded_path)
+    except Exception:
+        if MERGED_DATA_PATH.exists():
+            return MERGED_DATA_PATH
+        raise
+
+
 @lru_cache(maxsize=1)
 def load_data() -> pd.DataFrame:
-    df = pd.read_csv(DATA_PATH)
+    try:
+        df = pd.read_csv(resolve_dataset_path(), low_memory=False)
+    except Exception:
+        base_df = pd.read_csv(DATA_PATH, low_memory=False)
+        base_df["city"] = DEFAULT_CITY
+
+        hanoi_df = pd.read_csv(HANOI_DATA_PATH, low_memory=False) if HANOI_DATA_PATH.exists() else pd.DataFrame()
+        if not hanoi_df.empty:
+            hanoi_df["city"] = "Hà Nội"
+            hanoi_df["Location"] = hanoi_df["district"]
+            hanoi_df["Price"] = hanoi_df["price_vnd"].map(lambda value: f"{value / VND_BILLION:.2f} tỷ")
+            hanoi_df["Type of House"] = "Nhà phố"
+            hanoi_df["Land Area"] = hanoi_df["area"].map(lambda value: f"{value:.1f} m²")
+            hanoi_df["Bedrooms"] = np.nan
+            hanoi_df["Toilets"] = np.nan
+            hanoi_df["Total Floors"] = np.nan
+            hanoi_df["Main Door Direction"] = ""
+            hanoi_df["Balcony Direction"] = ""
+            hanoi_df["Legal Documents"] = "Chưa rõ"
+            hanoi_df["purchase_price"] = hanoi_df["price_vnd"] / (1 + hanoi_df["ROI"].clip(lower=0.01))
+            hanoi_df["current_price"] = hanoi_df["price_vnd"]
+            hanoi_df["date"] = pd.to_datetime("2024-01-01") + pd.to_timedelta(np.arange(len(hanoi_df)) * 7, unit="D")
+            for column in base_df.columns:
+                if column not in hanoi_df.columns:
+                    hanoi_df[column] = np.nan
+            hanoi_df = hanoi_df[base_df.columns.tolist() + ["city"]]
+
+        df = pd.concat([base_df, hanoi_df], ignore_index=True, sort=False)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     synthetic_span = df["date"].max() - df["date"].min()
     if pd.notna(synthetic_span) and synthetic_span.days > 3650:
@@ -191,6 +340,7 @@ def load_data() -> pd.DataFrame:
     df["business_roi"] = (df["ROI"] + df["district"].map(roi_adjustment).fillna(0)).clip(lower=0.035, upper=0.32)
     df["business_roi_pct"] = df["business_roi"] * 100
     df["ward"] = df["Location"].str.split(",").str[0].str.strip()
+    df["city"] = df["city"].fillna(DEFAULT_CITY)
     return df
 
 
@@ -213,6 +363,13 @@ def ensure_operational_tables() -> None:
                 source_url TEXT,
                 confidence_score REAL NOT NULL,
                 updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS dim_district (
+                district_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                district_name TEXT NOT NULL UNIQUE,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS dim_planning_zone (
@@ -254,8 +411,25 @@ def ensure_operational_tables() -> None:
         )
 
 
-def district_coordinates() -> dict[str, dict[str, float]]:
+def seed_district_coordinates() -> None:
     ensure_operational_tables()
+    district_rows = load_data()["district"].dropna().drop_duplicates().tolist()
+    with connect_db() as con:
+        for district in district_rows:
+            coord = FALLBACK_DISTRICT_COORDS.get(district_key(str(district)))
+            if not coord:
+                continue
+            con.execute(
+                """
+                INSERT OR IGNORE INTO dim_district (district_name, latitude, longitude)
+                VALUES (?, ?, ?)
+                """,
+                (str(district), coord["latitude"], coord["longitude"]),
+            )
+
+
+def district_coordinates() -> dict[str, dict[str, float]]:
+    seed_district_coordinates()
     coords: dict[str, dict[str, float]] = {}
     with connect_db() as con:
         rows = con.execute("SELECT district_name, latitude, longitude FROM dim_district").fetchall()
@@ -264,6 +438,7 @@ def district_coordinates() -> dict[str, dict[str, float]]:
             "latitude": float(row["latitude"]),
             "longitude": float(row["longitude"]),
         }
+    coords.update({key: value for key, value in FALLBACK_DISTRICT_COORDS.items() if key not in coords})
     return coords
 
 
@@ -530,6 +705,8 @@ async def startup_event() -> None:
 
 def apply_filters(df: pd.DataFrame, filters: Filters) -> pd.DataFrame:
     result = df.copy()
+    if filters.city:
+        result = result[result["city"] == filters.city]
     if filters.districts:
         result = result[result["district"].isin(filters.districts)]
     if filters.property_types:
@@ -698,9 +875,12 @@ def transactions_summary(filters: Filters) -> dict[str, Any]:
     ensure_operational_tables()
     clauses: list[str] = []
     params: list[Any] = []
-    if filters.districts:
-        clauses.append("district IN (%s)" % ",".join("?" for _ in filters.districts))
-        params.extend(filters.districts)
+    districts = filters.districts
+    if filters.city and not districts:
+        districts = sorted(load_data().loc[load_data()["city"] == filters.city, "district"].dropna().unique().tolist())
+    if districts:
+        clauses.append("district IN (%s)" % ",".join("?" for _ in districts))
+        params.extend(districts)
     if filters.property_types:
         clauses.append("property_type IN (%s)" % ",".join("?" for _ in filters.property_types))
         params.extend(filters.property_types)
@@ -797,9 +977,14 @@ def health() -> dict[str, str]:
 @app.get("/api/metadata")
 def metadata() -> dict[str, Any]:
     df = load_data()
+    districts_by_city = {
+        city: sorted(df.loc[df["city"] == city, "district"].dropna().unique().tolist()) for city in CITY_LABELS if city in df["city"].unique()
+    }
     return {
         "rows": len(df),
         "districts": sorted(df["district"].dropna().unique().tolist()),
+        "cities": [city for city in CITY_LABELS if city in df["city"].unique()],
+        "districts_by_city": districts_by_city,
         "property_types": sorted(df["Type of House"].dropna().unique().tolist()),
         "legal_documents": sorted(df["Legal Documents"].dropna().unique().tolist()),
         "price_range": [float(df["price_billion"].quantile(0.01)), float(df["price_billion"].quantile(0.99))],
@@ -814,7 +999,8 @@ def methodology() -> dict[str, Any]:
     return {
         "problem": "Doanh nghiệp cần hệ thống MIS/DSS/EIS để dự đoán giá bất động sản, so sánh ROI, kiểm soát rủi ro pháp lý/quy hoạch và chọn chiến lược đầu tư.",
         "data": {
-            "primary_dataset": "clean_data.csv",
+            "primary_dataset": "datasets/processed/clean_dataset.csv",
+            "raw_inputs": ["datasets/raw/clean_data.csv", "datasets/raw/clean_hanoi.csv"],
             "public_data_hub": PUBLIC_SOURCES,
             "governance": "Nguồn công khai được cache, ghi nguồn, timestamp và confidence score để demo ổn định.",
         },
@@ -937,6 +1123,8 @@ def slice_dice(payload: SliceDiceRequest) -> dict[str, Any]:
         matrix_records.append(item)
 
     active_filters = []
+    if payload.filters.city:
+        active_filters.append(payload.filters.city)
     if payload.filters.districts:
         active_filters.append(f"{len(payload.filters.districts)} khu vực")
     if payload.filters.property_types:
@@ -1091,6 +1279,38 @@ def what_if(payload: WhatIfRequest) -> dict[str, Any]:
     }
 
 
+@app.post("/api/recommendation/future")
+def future_recommendation(payload: FutureRecommendationRequest) -> dict[str, Any]:
+    started = time.perf_counter()
+    filtered_df = apply_filters(load_data(), payload.filters)
+    if filtered_df.empty:
+        filtered_df = load_data()
+    analytics_payload = analytics(payload.filters if not apply_filters(load_data(), payload.filters).empty else Filters(city=payload.filters.city))
+    what_if_payload = what_if(payload)
+    risk_label = what_if_payload["asset_prediction"].get("planning_risk_label", "medium")
+    question = (
+        f"Nen mua them, giu hay ban bot tai san o {payload.district} trong {payload.years} nam toi "
+        f"voi kich ban tang truong {payload.annual_growth_pct:.1f}%/nam, ROI ky vong {payload.roi_expected * 100:.1f}% "
+        f"va rui ro quy hoach {risk_label}? Hay neu ro co hoi, suy giam va rui ro hai mat cua thi truong."
+    )
+    sources, retrieval_mode = retrieve_context(question, filtered_df, payload.top_k, payload.filters)
+    recommendation, model_name = call_ollama_future_recommendation(what_if_payload, analytics_payload, payload.filters, sources)
+    if not recommendation:
+        recommendation = future_recommendation_fallback(what_if_payload, analytics_payload, payload.filters, sources, retrieval_mode)
+        model_name = recommendation["model"]
+
+    recommendation["retrieval_time_ms"] = round((time.perf_counter() - started) * 1000, 2)
+    recommendation["question"] = question
+    recommendation["what_if"] = what_if_payload
+    recommendation["analytics_snapshot"] = {
+        "best_district": analytics_payload.get("kpis", {}).get("best_district"),
+        "avg_roi": analytics_payload.get("kpis", {}).get("avg_roi"),
+        "risky": analytics_payload.get("risky", [])[:3],
+    }
+    recommendation["model"] = model_name or recommendation.get("model")
+    return recommendation
+
+
 @app.post("/api/etl/run")
 def etl_run() -> dict[str, Any]:
     result = run_etl(mode="manual")
@@ -1111,8 +1331,11 @@ def planning_zones() -> dict[str, Any]:
 
 
 @app.get("/api/map/districts")
-def map_districts() -> dict[str, Any]:
+def map_districts(city: str | None = None) -> dict[str, Any]:
+    selected_city = city or DEFAULT_CITY
     df = load_data()
+    if selected_city in df["city"].unique():
+        df = df[df["city"] == selected_city]
     score_df = district_score(df)
     coords = district_coordinates()
     zones = {row["district"]: row for row in planning_zones()["zones"]}
@@ -1126,6 +1349,7 @@ def map_districts() -> dict[str, Any]:
         map_rows.append(
             {
                 "district": row.district,
+                "city": selected_city,
                 "latitude": coord["latitude"],
                 "longitude": coord["longitude"],
                 "listings": int(row.listings),
@@ -1143,12 +1367,18 @@ def map_districts() -> dict[str, Any]:
                 ),
             }
         )
-    return {"districts": map_rows, "sources": PUBLIC_SOURCES}
+    return {
+        "city": selected_city,
+        "center": CITY_CENTERS.get(selected_city, CITY_CENTERS[DEFAULT_CITY]),
+        "districts": map_rows,
+        "sources": PUBLIC_SOURCES,
+    }
 
 
 def analytics_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
     docs: list[dict[str, Any]] = []
     for row in district_score(df).head(20).itertuples(index=False):
+        city = df.loc[df["district"] == row.district, "city"].dropna().mode()
         docs.append(
             {
                 "title": f"Market intelligence - {row.district}",
@@ -1158,9 +1388,12 @@ def analytics_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
                     f"giá/m2 {row.price_m2_million:.1f} triệu, điểm cơ hội {row.opportunity_score:.1f}/100."
                 ),
                 "source_name": "PropertyVision BI mart",
-                "source_url": "clean_data.csv",
+                "source_url": "datasets/processed/clean_dataset.csv",
+                "district": row.district,
+                "city": city.iloc[0] if not city.empty else None,
             }
         )
+    city_mode = df["city"].dropna().mode()
     for row in type_score(df).itertuples(index=False):
         docs.append(
             {
@@ -1170,7 +1403,8 @@ def analytics_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
                     f"giá/m2 {row.price_m2_million:.1f} triệu, diện tích TB {row.avg_area:.1f} m2."
                 ),
                 "source_name": "PropertyVision segment mart",
-                "source_url": "clean_data.csv",
+                "source_url": "datasets/processed/clean_dataset.csv",
+                "city": city_mode.iloc[0] if not city_mode.empty else None,
             }
         )
     return docs
@@ -1179,10 +1413,16 @@ def analytics_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
 def load_rag_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
     seed_planning_and_documents()
     docs = analytics_documents(df)
+    city_lookup = district_city_lookup()
     with connect_db() as con:
         legal_rows = con.execute("SELECT * FROM legal_documents").fetchall()
         zone_rows = con.execute("SELECT * FROM dim_planning_zone").fetchall()
     for row in legal_rows:
+        inferred_city = (
+            city_lookup.get(row["district"])
+            if row["district"]
+            else infer_document_city(row["title"], row["source_name"], row["source_url"])
+        )
         docs.append(
             {
                 "title": row["title"],
@@ -1190,6 +1430,7 @@ def load_rag_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
                 "source_name": row["source_name"],
                 "source_url": row["source_url"],
                 "district": row["district"],
+                "city": inferred_city,
             }
         )
     for row in zone_rows:
@@ -1203,6 +1444,7 @@ def load_rag_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
                 "source_name": row["source_name"],
                 "source_url": row["source_url"],
                 "district": row["district"],
+                "city": city_lookup.get(row["district"]) if row["district"] else None,
             }
         )
     return docs
@@ -1242,17 +1484,61 @@ def get_rag_index(df: pd.DataFrame) -> dict[str, Any]:
     return _rag_cache["index"]
 
 
-def retrieve_context(question: str, df: pd.DataFrame, top_k: int = 5) -> tuple[list[dict[str, Any]], str]:
+def candidate_doc_indices(index: dict[str, Any], filters: Filters | None, df: pd.DataFrame) -> list[int]:
+    docs = index["docs"]
+    if not filters:
+        return list(range(len(docs)))
+
+    available_cities = set(df["city"].dropna().astype(str).tolist()) if "city" in df.columns else set()
+    selected_city = filters.city if filters.city in available_cities else None
+    selected_districts = set(filters.districts or [])
+
+    indices: list[int] = []
+    for idx, doc in enumerate(docs):
+        doc_city = doc.get("city")
+        doc_district = doc.get("district")
+        city_match = not selected_city or doc_city is None or str(doc_city) == selected_city
+        district_match = not selected_districts or doc_district is None or str(doc_district) in selected_districts
+        if city_match and district_match:
+            indices.append(idx)
+
+    if indices:
+        return indices
+
+    if selected_city:
+        city_only = [
+            idx for idx, doc in enumerate(docs)
+            if doc.get("city") is None or str(doc.get("city")) == selected_city
+        ]
+        if city_only:
+            return city_only
+
+    return list(range(len(docs)))
+
+
+def retrieve_context(question: str, df: pd.DataFrame, top_k: int = 5, filters: Filters | None = None) -> tuple[list[dict[str, Any]], str]:
     index = get_rag_index(df)
+    doc_indices = candidate_doc_indices(index, filters, df)
+    if not doc_indices:
+        return [], index["mode"]
+
     if index["mode"] == "sentence-transformers":
         query = index["embedder"].encode([question], normalize_embeddings=True, show_progress_bar=False)
+        candidate_matrix = index["matrix"][doc_indices]
+        scores = candidate_matrix @ query[0]
+        ranked_positions = np.argsort(scores)[::-1][: min(top_k, len(doc_indices))]
+        ranked = [(doc_indices[int(pos)], float(scores[int(pos)])) for pos in ranked_positions]
     else:
         query = index["embedder"].transform([question])
-    distances, indices = index["nn"].kneighbors(query, n_neighbors=min(top_k, len(index["docs"])))
+        candidate_matrix = index["matrix"][doc_indices]
+        similarities = cosine_similarity(query, candidate_matrix)[0]
+        ranked_positions = np.argsort(similarities)[::-1][: min(top_k, len(doc_indices))]
+        ranked = [(doc_indices[int(pos)], float(similarities[int(pos)])) for pos in ranked_positions]
+
     sources: list[dict[str, Any]] = []
-    for distance, doc_idx in zip(distances[0], indices[0]):
+    for doc_idx, score in ranked:
         doc = dict(index["docs"][int(doc_idx)])
-        doc["score"] = float(1 - distance)
+        doc["score"] = score
         sources.append(doc)
     return sources, index["mode"]
 
@@ -1264,24 +1550,31 @@ def call_ollama(question: str, sources: list[dict[str, Any]], df: pd.DataFrame) 
     )
     top = district_score(df).iloc[0]
     prompt = f"""
-Bạn là trợ lý phân tích đầu tư bất động sản cho doanh nghiệp.
-Trả lời bằng tiếng Việt, ngắn gọn, có lập luận kinh doanh, nhắc nguồn theo số [1], [2] nếu dùng.
+Bạn là trợ lý phân tích đầu tư bất động sản cho ban điều hành doanh nghiệp.
+Hãy trả lời bằng tiếng Việt, giọng điều hành, rõ ý, ngắn gọn, dễ hiểu với CEO.
+Ưu tiên ngôn ngữ kinh doanh và đầu tư bất động sản. Tránh thuật ngữ kỹ thuật nếu không thật sự cần.
+Nếu dùng nguồn, nhắc theo số [1], [2].
 
 Câu hỏi: {question}
 
-KPI hiện tại:
-- Khu ưu tiên: {top['district']}
+Tóm tắt hiện tại:
+- Khu vực ưu tiên: {top['district']}
 - Điểm cơ hội: {top['opportunity_score']:.1f}/100
-- ROI trung bình khu ưu tiên: {top['roi_pct']:.2f}%
+- ROI bình quân khu vực ưu tiên: {top['roi_pct']:.2f}%
 
-Ngữ cảnh truy xuất:
+Nguồn tham chiếu:
 {context}
 
 Yêu cầu trả lời:
-1. Khuyến nghị chính.
-2. Lý do dữ liệu.
-3. Rủi ro pháp lý/quy hoạch cần kiểm tra.
-4. Hành động tiếp theo cho doanh nghiệp.
+1. Kết luận điều hành: nên ưu tiên khu nào hoặc nên hành động thế nào.
+2. Cơ sở nhận định: nêu ngắn gọn các dữ kiện chính.
+3. Rủi ro cần lưu ý: đặc biệt là pháp lý, quy hoạch, thanh khoản hoặc chu kỳ thị trường.
+4. Hành động tiếp theo: nêu bước đi cụ thể cho doanh nghiệp.
+
+Phong cách:
+- Không lan man.
+- Mỗi ý nên hướng tới quyết định.
+- Không dùng giọng giải thích kỹ thuật.
 """.strip()
     for model_name in OLLAMA_MODELS:
         try:
@@ -1295,6 +1588,191 @@ Yêu cầu trả lời:
                 answer = payload.get("response", "").strip()
                 if answer:
                     return answer, model_name
+        except requests.RequestException:
+            continue
+    return None, None
+
+
+def future_recommendation_fallback(
+    what_if_payload: dict[str, Any],
+    analytics_payload: dict[str, Any],
+    filters: Filters,
+    sources: list[dict[str, Any]],
+    retrieval_mode: str,
+) -> dict[str, Any]:
+    kpis = analytics_payload.get("kpis", {})
+    risky_rows = analytics_payload.get("risky", [])
+    summary = what_if_payload.get("summary", {})
+    scenario_rows = what_if_payload.get("projection", [])
+    budget = float(what_if_payload.get("input", {}).get("budget_vnd") or 0)
+    loss_row = next((row for row in scenario_rows if float(row.get("pessimistic") or 0) < budget), None)
+    weak_district = risky_rows[0]["district"] if risky_rows else None
+    best_district = kpis.get("best_district")
+    cumulative_roi = float(summary.get("cumulative_roi_pct") or 0)
+
+    if loss_row:
+        action = (
+            f"Khuyến nghị ưu tiên phòng thủ: tạm dừng mở rộng quá nhanh, xem xét bán bớt hoặc không tăng tỷ trọng "
+            f"tại {weak_district or 'nhóm khu vực rủi ro cao'}, và chỉ giải ngân chọn lọc tại {best_district or 'khu vực dẫn đầu'}."
+        )
+        risks = [
+            f"Kịch bản xấu có thể thua lỗ từ năm {2025 + int(loss_row.get('year', 0))}.",
+            "Thanh khoản và biên an toàn có thể suy giảm nếu thị trường tiếp tục chậm lại.",
+        ]
+    elif cumulative_roi < 15:
+        action = (
+            f"Khuyến nghị giải ngân chọn lọc: ưu tiên tài sản pháp lý rõ ràng tại {best_district or 'khu vực dẫn đầu'}, "
+            "giữ tỷ trọng vừa phải và tránh dùng đòn bẩy cao."
+        )
+        risks = [
+            "Biên lợi nhuận chưa đủ rộng, nên dễ bị bào mòn nếu chọn sai thời điểm giải ngân.",
+            f"{weak_district or 'Một số khu vực hiệu quả thấp'} cần được kiểm tra kỹ về quy hoạch và khả năng thoát hàng.",
+        ]
+    else:
+        action = (
+            f"Khuyến nghị có thể mua thêm có kiểm soát tại {best_district or 'khu vực dẫn đầu'}, "
+            "nhưng vẫn cần theo dõi sát kịch bản xấu và đặt ngưỡng dừng lỗ cho nhóm khu vực yếu."
+        )
+        risks = [
+            "Thị trường bất động sản luôn có hai mặt: kỳ vọng lợi nhuận cao nhưng thanh khoản có thể giảm mạnh khi chu kỳ đảo chiều.",
+            f"{weak_district or 'Nhóm khu vực điểm thấp'} vẫn là điểm cảnh báo nếu doanh nghiệp muốn mở rộng danh mục.",
+        ]
+
+    basis = [
+        f"Bộ lọc hiện tại: {filters_summary(filters)}.",
+        f"ROI tích lũy ở kịch bản cơ sở: {cumulative_roi:.2f}%.",
+        f"Khu vực ưu tiên hiện tại: {best_district or 'chưa xác định'}.",
+    ]
+    return {
+        "answer": action,
+        "risks": risks,
+        "basis": basis,
+        "sources": sources,
+        "model": "future-retrieval-fallback",
+        "mode": f"{retrieval_mode}-fallback",
+        "llm_available": False,
+    }
+
+
+def call_ollama_future_recommendation(
+    what_if_payload: dict[str, Any],
+    analytics_payload: dict[str, Any],
+    filters: Filters,
+    sources: list[dict[str, Any]],
+) -> tuple[dict[str, Any] | None, str | None]:
+    kpis = analytics_payload.get("kpis", {})
+    risky_rows = analytics_payload.get("risky", [])
+    summary = what_if_payload.get("summary", {})
+    scenarios = what_if_payload.get("scenarios", [])
+    projection = what_if_payload.get("projection", [])
+    scenario_text = "\n".join(
+        f"- {item['name']}: growth {item['growth_pct']:.2f}%, terminal value {item['terminal_value'] / VND_BILLION:.2f} ty"
+        for item in scenarios
+    )
+    sampled_years = "\n".join(
+        f"- Nam {2025 + int(row['year'])}: xau {row['pessimistic'] / VND_BILLION:.2f} ty, co so {row['base'] / VND_BILLION:.2f} ty"
+        for row in projection[: min(6, len(projection))]
+    )
+    source_context = "\n\n".join(
+        f"[{idx + 1}] {source['title']} - {source['content']} (Nguon: {source.get('source_name')})"
+        for idx, source in enumerate(sources)
+    )
+    risky_text = ", ".join(row["district"] for row in risky_rows[:3]) or "khong co khu vuc rui ro noi bat"
+    prompt = f"""
+Bạn là trợ lý phân tích đầu tư bất động sản cho ban điều hành doanh nghiệp.
+Hãy đưa ra khuyến nghị đầu tư tương lai bằng tiếng Việt, theo giọng điều hành, ngắn gọn, dễ hiểu với CEO.
+Bắt buộc cân bằng giữa cơ hội và rủi ro. Không được chỉ nói một chiều theo hướng tăng trưởng.
+Phải nêu rõ mặt trái của thị trường nếu doanh nghiệp mở rộng quá nhanh.
+
+Bối cảnh hiện tại: {filters_summary(filters)}
+
+Tài sản đang mô phỏng:
+- Mức rủi ro quy hoạch: {what_if_payload['asset_prediction'].get('planning_risk_label', 'unknown')}
+- Giá trung vị khu vực: {what_if_payload['asset_prediction'].get('market_median', 0) / VND_BILLION:.2f} tỷ
+- Ngân sách: {what_if_payload['input']['budget_vnd'] / VND_BILLION:.2f} tỷ
+- Tăng trưởng giả định: {what_if_payload['input']['annual_growth_pct']:.2f}%/năm
+- Thời gian nắm giữ: {what_if_payload['input']['years']} năm
+- ROI kỳ vọng: {what_if_payload['input']['roi_expected'] * 100:.2f}%
+
+Tóm tắt danh mục:
+- Khu vực ưu tiên hiện tại: {kpis.get('best_district', 'N/A')}
+- Điểm cơ hội: {kpis.get('best_score', 0):.1f}/100
+- ROI bình quân: {kpis.get('avg_roi', 0):.2f}%
+- Khu vực cần cảnh báo: {risky_text}
+
+Tóm tắt mô phỏng:
+- Giá trị tương lai: {summary.get('future_value', 0) / VND_BILLION:.2f} tỷ
+- Lợi nhuận vốn: {summary.get('capital_gain', 0) / VND_BILLION:.2f} tỷ
+- ROI tích lũy: {summary.get('cumulative_roi_pct', 0):.2f}%
+- Thời gian hoàn vốn: {summary.get('payback_years')}
+
+Các kịch bản:
+{scenario_text}
+
+Các mốc năm:
+{sampled_years}
+
+Nguồn tham chiếu:
+{source_context}
+
+Trả về đúng định dạng sau:
+ACTION: ...
+WHY: ...
+RISKS:
+- ...
+- ...
+SUGGESTION: ...
+BASIS:
+- ...
+- ...
+
+Yêu cầu diễn đạt:
+- ACTION: chỉ rõ nên mua thêm, giữ tỷ trọng, bán bớt hay tạm dừng giải ngân.
+- WHY: nêu căn cứ kinh doanh ngắn gọn.
+- RISKS: nêu các rủi ro chính, bao gồm thanh khoản, pháp lý, quy hoạch, hoặc chu kỳ thị trường.
+- SUGGESTION: nêu bước hành động tiếp theo cho doanh nghiệp.
+- BASIS: chỉ ghi các dữ kiện cốt lõi dùng để ra quyết định.
+""".strip()
+
+    for model_name in OLLAMA_MODELS:
+        try:
+            response = requests.post(
+                OLLAMA_URL,
+                json={"model": model_name, "prompt": prompt, "stream": False, "options": {"temperature": 0.2}},
+                timeout=40,
+            )
+            if not response.ok:
+                continue
+            payload = response.json()
+            answer = payload.get("response", "").strip()
+            if not answer:
+                continue
+
+            sections = {"ACTION": "", "WHY": "", "RISKS": "", "SUGGESTION": "", "BASIS": ""}
+            current = None
+            for raw_line in answer.splitlines():
+                line = raw_line.strip()
+                matched = next((key for key in sections if line.startswith(f"{key}:")), None)
+                if matched:
+                    sections[matched] = line.split(":", 1)[1].strip()
+                    current = matched
+                elif current and line:
+                    sections[current] = f"{sections[current]}\n{line}".strip()
+
+            risks = [item.strip("- ").strip() for item in sections["RISKS"].splitlines() if item.strip()]
+            basis = [item.strip("- ").strip() for item in sections["BASIS"].splitlines() if item.strip()]
+            result = {
+                "answer": sections["ACTION"] or answer,
+                "why": sections["WHY"],
+                "risks": risks,
+                "suggestion": sections["SUGGESTION"],
+                "basis": basis,
+                "sources": sources,
+                "model": model_name,
+                "mode": "ollama-future-recommendation",
+                "llm_available": True,
+            }
+            return result, model_name
         except requests.RequestException:
             continue
     return None, None
@@ -1314,17 +1792,17 @@ def assistant(payload: AssistantRequest) -> dict[str, Any]:
             "retrieved_context": [],
         }
 
-    sources, retrieval_mode = retrieve_context(payload.question, df, payload.top_k)
+    sources, retrieval_mode = retrieve_context(payload.question, df, payload.top_k, payload.filters)
     answer, model_name = call_ollama(payload.question, sources, df)
     llm_available = bool(answer)
     if not answer:
         top = district_score(df).iloc[0]
         source_lines = " ".join(f"[{idx + 1}] {source['content']}" for idx, source in enumerate(sources[:3]))
         answer = (
-            f"Khuyến nghị hiện tại là ưu tiên {top['district']} với điểm cơ hội "
-            f"{top['opportunity_score']:.1f}/100 và ROI trung bình {top['roi_pct']:.2f}%. "
-            f"Dữ liệu truy xuất cho thấy: {source_lines} "
-            "Ollama hiện chưa phản hồi, nên đây là chế độ retrieval fallback có citation."
+            f"Kết luận điều hành hiện tại là ưu tiên {top['district']} với điểm cơ hội "
+            f"{top['opportunity_score']:.1f}/100 và ROI bình quân {top['roi_pct']:.2f}%. "
+            f"Các căn cứ chính cho nhận định này gồm: {source_lines} "
+            "Trợ lý chưa phản hồi từ mô hình ngôn ngữ, nên hệ thống đang trả lời theo chế độ dự phòng dựa trên dữ liệu và nguồn tham chiếu sẵn có."
         )
 
     return {
