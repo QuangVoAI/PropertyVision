@@ -40,6 +40,8 @@ data/
 # Downloaded dataset cache/files
 datasets/.cache/
 datasets/clean_dataset.csv
+datasets/raw/
+datasets/README.md
 
 # Design files
 Web/
