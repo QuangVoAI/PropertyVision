@@ -273,6 +273,58 @@ button {
   color: var(--muted);
 }
 
+.section-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.section-tabs button {
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.section-tabs button.active {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+.insight-hero {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  border: 1px solid #dbeafe;
+  border-left: 4px solid var(--primary-strong);
+  border-radius: 8px;
+  background: #eff6ff;
+}
+
+.insight-hero strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+
+.insight-hero p,
+.insight-hero small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.insight-hero.tone-good {
+  background: #ecfeff;
+  border-color: #bae6fd;
+}
+
 .grid-12 {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -312,6 +364,12 @@ button {
   margin: 0;
   font-size: 18px;
   line-height: 24px;
+}
+
+.panel-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .kpi-grid {
@@ -566,6 +624,42 @@ tr:hover td {
   padding: 14px;
 }
 
+.disclosure {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.disclosure.compact {
+  margin-top: 8px;
+}
+
+.disclosure summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure summary::after {
+  content: "+";
+  float: right;
+  color: var(--primary);
+}
+
+.disclosure[open] summary::after {
+  content: "-";
+}
+
+.disclosure-body {
+  padding: 0 14px 14px;
+}
+
 .markdown-body p {
   margin: 0 0 10px;
 }
@@ -725,6 +819,11 @@ tr:hover td {
   .result-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .section-tabs {
+    overflow: auto;
+    padding-bottom: 2px;
+  }
 }
 
 @media (max-width: 680px) {
@@ -747,6 +846,10 @@ tr:hover td {
   .result-grid,
   .insight-grid {
     grid-template-columns: 1fr;
+  }
+
+  .insight-hero {
+    padding: 16px;
   }
 
   .page-header h2 {

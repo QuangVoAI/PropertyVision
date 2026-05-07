@@ -88,6 +88,84 @@ function MarkdownBlock({ text }) {
   return <div className="markdown-body" dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(text)}</p>` }} />;
 }
 
+function SectionTabs({ tabs, active, onChange }) {
+  return (
+    <div className="section-tabs" role="tablist" aria-label="Section tabs">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          className={active === tab.id ? "active" : ""}
+          onClick={() => onChange(tab.id)}
+          type="button"
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function InsightHero({ title, body, tone = "default", meta }) {
+  return (
+    <section className={`insight-hero tone-${tone}`}>
+      <div>
+        <strong>{title}</strong>
+        <p>{body}</p>
+      </div>
+      {meta ? <small>{meta}</small> : null}
+    </section>
+  );
+}
+
+function Disclosure({ title, children, defaultOpen = false, compact = false }) {
+  return (
+    <details className={`disclosure ${compact ? "compact" : ""}`} open={defaultOpen}>
+      <summary>{title}</summary>
+      <div className="disclosure-body">{children}</div>
+    </details>
+  );
+}
+
+function buildExecutiveTrend(timeline = []) {
+  if (!timeline.length) return [];
+  const sorted = [...timeline].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const yearlyActual = new Map();
+  sorted.forEach((row) => {
+    const year = Number(String(row.date).slice(0, 4));
+    if (!yearlyActual.has(year)) yearlyActual.set(year, []);
+    yearlyActual.get(year).push(row);
+  });
+
+  const actualRows = [...yearlyActual.entries()].map(([year, rows]) => ({
+    year,
+    price_billion: rows.reduce((sum, row) => sum + Number(row.price_billion || 0), 0) / rows.length,
+    roi_pct: rows.reduce((sum, row) => sum + Number(row.roi_pct || 0), 0) / rows.length,
+    stage: year < 2025 ? "actual" : "projection"
+  }));
+  const base2025 = actualRows.find((row) => row.year === 2025) || actualRows[actualRows.length - 1];
+  const recent = actualRows.slice(-3);
+  const firstRecent = recent[0] || base2025;
+  const lastRecent = recent[recent.length - 1] || base2025;
+  const spanYears = Math.max(1, (lastRecent.year || 2025) - (firstRecent.year || 2024));
+  const inferredGrowth = Math.pow((lastRecent.price_billion || 1) / Math.max(firstRecent.price_billion || 1, 0.1), 1 / spanYears) - 1;
+  const annualGrowth = Math.max(0.02, Math.min(0.09, Number.isFinite(inferredGrowth) ? inferredGrowth : 0.055));
+  const roiSlope = ((lastRecent.roi_pct || 0) - (firstRecent.roi_pct || 0)) / spanYears;
+  const startPrice = base2025.price_billion || lastRecent.price_billion || 0;
+  const startRoi = base2025.roi_pct || lastRecent.roi_pct || 0;
+
+  const projection = [];
+  for (let year = 2025; year <= 2050; year += 1) {
+    const offset = year - 2025;
+    projection.push({
+      year,
+      price_billion: Number((startPrice * ((1 + annualGrowth) ** offset)).toFixed(2)),
+      roi_pct: Number(Math.max(6, Math.min(24, startRoi + roiSlope * offset * 0.35)).toFixed(2)),
+      stage: year === 2025 ? "actual" : "projection"
+    });
+  }
+  return projection;
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -228,12 +306,19 @@ function GlobalFilters({ metadata, filters, setFilters }) {
 
 function OverviewPage({ analytics, typeShare }) {
   const kpis = analytics?.kpis || {};
+  const executiveTrend = useMemo(() => buildExecutiveTrend(analytics?.timeline || []), [analytics?.timeline]);
+  const projected2050 = executiveTrend[executiveTrend.length - 1];
   return (
     <>
       <PageHeader
         eyebrow="Executive Overview"
         title="Tổng quan Quyết định Chiến lược"
         description="Thông tin thị trường thời gian thực, hiệu quả danh mục và khuyến nghị cho lãnh đạo."
+      />
+      <InsightHero
+        title={`Ưu tiên mở rộng tại ${kpis.best_district || "khu vực dẫn đầu"}`}
+        body={`Điểm cơ hội hiện tại ${(kpis.best_score || 0).toFixed(1)}/100. Đây nên là khu vực được đưa vào shortlist đầu tiên trước khi đi sâu vào pháp lý và dòng tiền.`}
+        meta={projected2050 ? `Khung dự phóng điều hành 2025–2050 cho thấy giá trị thị trường có thể đạt khoảng ${projected2050.price_billion.toFixed(1)} tỷ ở kịch bản cơ sở.` : ""}
       />
       <div className="kpi-grid">
         <KpiCard label="Total Value" value={money(kpis.total_value)} delta="Filtered market" icon="account_balance" />
@@ -243,19 +328,20 @@ function OverviewPage({ analytics, typeShare }) {
         <KpiCard label="Txn Proxy" value={(kpis.transaction_count || 0).toLocaleString("vi-VN")} delta={`Confidence ${((kpis.avg_confidence || 0) * 100).toFixed(0)}%`} icon="swap_horiz" />
       </div>
       <div className="grid-12">
-        <Panel title="Xu hướng Thị trường & ROI" className="span-8">
+        <Panel title="Xu hướng điều hành 2025–2050" className="span-8">
           <ResponsiveContainer width="100%" height={340}>
-            <ComposedChart data={analytics?.timeline || []}>
+            <ComposedChart data={executiveTrend}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tickFormatter={(v) => String(v).slice(0, 7)} />
+              <XAxis dataKey="year" ticks={[2025, 2030, 2035, 2040, 2045, 2050]} />
               <YAxis yAxisId="left" tickFormatter={(v) => `${v.toFixed(0)} tỷ`} />
               <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `${v.toFixed(0)}%`} />
               <Tooltip formatter={(v) => Number(v).toFixed(2)} />
               <Legend />
-              <Area yAxisId="left" type="monotone" dataKey="price_billion" name="Giá TB (tỷ)" fill="#dbeafe" stroke="#2563eb" />
-              <Line yAxisId="right" type="monotone" dataKey="roi_pct" name="ROI (%)" stroke="#0f766e" strokeWidth={2} />
+              <Area yAxisId="left" type="monotone" dataKey="price_billion" name="Giá trị cơ sở (tỷ)" fill="#dbeafe" stroke="#2563eb" />
+              <Line yAxisId="right" type="monotone" dataKey="roi_pct" name="ROI điều hành (%)" stroke="#0f766e" strokeWidth={2} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
+          <p className="panel-note">Biểu đồ này ưu tiên cách đọc cho lãnh đạo: khung năm 2025–2050, ít series, nhấn vào xu hướng cơ sở thay vì toàn bộ biến động tháng.</p>
         </Panel>
         <Panel title="Phân bổ Vốn theo Phân khúc" className="span-4">
           <ResponsiveContainer width="100%" height={340}>
@@ -286,41 +372,58 @@ function MarketPage({ analytics }) {
   const districtRows = analytics?.districts || [];
   const topScore = [...districtRows].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 3);
   const underpriced = [...districtRows].sort((a, b) => a.price_m2_million - b.price_m2_million).slice(0, 3);
+  const [marketView, setMarketView] = useState("chart");
   return (
     <>
       <PageHeader eyebrow="Market Intelligence" title="Phân tích thị trường" description="So sánh ROI, giá/m² và thanh khoản proxy giữa các khu vực và phân khúc." />
+      <InsightHero
+        title={topScore[0] ? `${topScore[0].district} đang dẫn đầu về opportunity score` : "Thị trường đang có phân hóa theo khu vực"}
+        body={topScore[0] ? `Điểm ${topScore[0].opportunity_score.toFixed(1)}/100, phù hợp để đưa vào shortlist mở rộng. Đọc cùng giá/m² và thanh khoản để tránh chỉ nhìn ROI.` : "Dùng trang này để đọc nhanh khu nào đáng chú ý trước khi đi sâu vào Slice & Dice."}
+      />
+      <SectionTabs
+        tabs={[
+          { id: "chart", label: "Tóm tắt thị trường" },
+          { id: "table", label: "Bảng so sánh" },
+          { id: "detail", label: "Chi tiết thêm" }
+        ]}
+        active={marketView}
+        onChange={setMarketView}
+      />
       <div className="grid-12">
-        <Panel title="ROI theo Quận (Top 12)" className="span-6">
-          <ResponsiveContainer width="100%" height={360}>
-            <BarChart data={[...districtRows].sort((a, b) => b.roi_pct - a.roi_pct).slice(0, 12)}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="district" interval={0} angle={-25} textAnchor="end" height={90} />
-              <YAxis tickFormatter={(v) => `${v}%`} />
-              <Tooltip formatter={(v) => pct(v)} />
-              <Bar dataKey="roi_pct" fill="#0f766e" name="ROI" />
-            </BarChart>
-          </ResponsiveContainer>
-        </Panel>
-        <Panel title="Giá vs Thanh khoản" className="span-6">
-          <ResponsiveContainer width="100%" height={360}>
-            <ScatterChart>
-              <CartesianGrid />
-              <XAxis type="number" dataKey="price_m2_million" name="Triệu/m²" label={{ value: "Giá/m² (triệu VND)", position: "insideBottom", offset: -4 }} />
-              <YAxis type="number" dataKey="listings" name="Số tin" tickFormatter={compact} label={{ value: "Thanh khoản proxy", angle: -90, position: "insideLeft" }} />
-              <Tooltip cursor={{ strokeDasharray: "3 3" }} formatter={(v) => Number(v).toFixed(1)} />
-              <Scatter data={districtRows} fill="#2563eb" />
-            </ScatterChart>
-          </ResponsiveContainer>
-        </Panel>
-        <Panel title="So sánh phân khúc" className="span-12">
+        {marketView !== "table" ? <>
+          <Panel title="ROI theo Quận (Top 12)" className="span-6">
+            <ResponsiveContainer width="100%" height={360}>
+              <BarChart data={[...districtRows].sort((a, b) => b.roi_pct - a.roi_pct).slice(0, 12)}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="district" interval={0} angle={-25} textAnchor="end" height={90} />
+                <YAxis tickFormatter={(v) => `${v}%`} />
+                <Tooltip formatter={(v) => pct(v)} />
+                <Bar dataKey="roi_pct" fill="#0f766e" name="ROI" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Panel>
+          <Panel title="Giá vs Thanh khoản" className="span-6">
+            <ResponsiveContainer width="100%" height={360}>
+              <ScatterChart>
+                <CartesianGrid />
+                <XAxis type="number" dataKey="price_m2_million" name="Triệu/m²" label={{ value: "Giá/m² (triệu VND)", position: "insideBottom", offset: -4 }} />
+                <YAxis type="number" dataKey="listings" name="Số tin" tickFormatter={compact} label={{ value: "Thanh khoản proxy", angle: -90, position: "insideLeft" }} />
+                <Tooltip cursor={{ strokeDasharray: "3 3" }} formatter={(v) => Number(v).toFixed(1)} />
+                <Scatter data={districtRows} fill="#2563eb" />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </Panel>
+        </> : null}
+        {marketView !== "chart" ? <Panel title="So sánh phân khúc" className="span-12">
           <DataTable rows={districtRows.slice(0, 12)} />
-        </Panel>
+        </Panel> : null}
         <Panel title="Insight phân biệt khu vực" className="span-12">
           <div className="insight-grid">
             <div><strong>Top opportunity</strong><p>{topScore.map((row) => `${row.district} (${row.opportunity_score.toFixed(1)})`).join(" · ")}</p></div>
             <div><strong>Giá/m² thấp nhất</strong><p>{underpriced.map((row) => `${row.district} (${row.price_m2_million.toFixed(1)}tr/m²)`).join(" · ")}</p></div>
             <div><strong>Benchmark</strong><p>ROI nên đọc cùng opportunity score, giá/m² và thanh khoản proxy để tránh kết luận sai khi ROI gần nhau.</p></div>
           </div>
+          {marketView === "detail" ? <Disclosure title="Mở bảng chi tiết 12 khu vực" defaultOpen={false}><DataTable rows={districtRows.slice(0, 12)} /></Disclosure> : null}
         </Panel>
       </div>
     </>
@@ -417,11 +520,25 @@ function formatMetric(value, metric) {
 }
 
 function DecisionPage({ metadata, predictForm, setPredictForm, simulationForm, setSimulationForm, prediction, whatIf, runWhatIf }) {
+  const [decisionView, setDecisionView] = useState("whatif");
   return (
     <>
       <PageHeader eyebrow="Decision Lab" title="Phòng thí nghiệm Quyết định" description="Mô phỏng kết quả đầu tư đa kịch bản và kiểm tra các giả định áp lực." />
+      <InsightHero
+        title="What-If là phần DSS cốt lõi"
+        body="Người dùng điều chỉnh ngân sách, tăng trưởng và số năm để thấy ngay tác động lên Future Value, ROI và Payback. Đây là màn hình nên demo cho CEO sau Executive Overview."
+      />
+      <SectionTabs
+        tabs={[
+          { id: "whatif", label: "What-If" },
+          { id: "scenario", label: "Kịch bản 2025–2050" },
+          { id: "asset", label: "Thông số tài sản" }
+        ]}
+        active={decisionView}
+        onChange={setDecisionView}
+      />
       <form className="grid-12" onSubmit={runWhatIf}>
-        <Panel title="Thông số Tài sản" className="span-3">
+        {decisionView !== "scenario" ? <Panel title="Thông số Tài sản" className="span-3">
           <div className="control-stack">
             <select value={predictForm.district} onChange={(e) => setPredictForm({ ...predictForm, district: e.target.value })}>{metadata?.districts?.map((item) => <option key={item}>{item}</option>)}</select>
             <select value={predictForm.property_type} onChange={(e) => setPredictForm({ ...predictForm, property_type: e.target.value })}>{metadata?.property_types?.map((item) => <option key={item}>{item}</option>)}</select>
@@ -429,8 +546,8 @@ function DecisionPage({ metadata, predictForm, setPredictForm, simulationForm, s
             {["area", "bedrooms", "toilets", "floors"].map((key) => <label key={key}>{key}<input type="number" value={predictForm[key]} onChange={(e) => setPredictForm({ ...predictForm, [key]: e.target.value })} /></label>)}
             <label>ROI kỳ vọng<input type="number" step="0.01" value={predictForm.roi_expected} onChange={(e) => setPredictForm({ ...predictForm, roi_expected: e.target.value })} /></label>
           </div>
-        </Panel>
-        <Panel title="Mô phỏng Kịch bản" className="span-4">
+        </Panel> : null}
+        <Panel title="Mô phỏng Kịch bản" className={decisionView === "scenario" ? "span-4" : "span-4"}>
           <div className="control-stack">
             <label>Ngân sách: {Number(simulationForm.budget_billion).toFixed(1)} tỷ<input type="range" min="1" max="100" step="0.5" value={simulationForm.budget_billion} onChange={(e) => setSimulationForm({ ...simulationForm, budget_billion: e.target.value })} /></label>
             <label>Tăng trưởng/năm: {Number(simulationForm.annual_growth_pct).toFixed(1)}%<input type="range" min="-5" max="25" step="0.5" value={simulationForm.annual_growth_pct} onChange={(e) => setSimulationForm({ ...simulationForm, annual_growth_pct: e.target.value })} /></label>
@@ -438,12 +555,13 @@ function DecisionPage({ metadata, predictForm, setPredictForm, simulationForm, s
             <button className="primary-btn" type="submit">Chạy What-If DSS</button>
           </div>
         </Panel>
-        <Panel title="Dự báo Giá trị Tương lai" className="span-5">
+        <Panel title="Dự báo Giá trị Tương lai" className={decisionView === "scenario" ? "span-8" : "span-5"}>
           {whatIf ? <div className="result-grid"><KpiCard label="Future Value" value={money(whatIf.summary.future_value)} /><KpiCard label="Capital Gain" value={money(whatIf.summary.capital_gain)} /><KpiCard label="Cumulative ROI" value={pct(whatIf.summary.cumulative_roi_pct)} /><KpiCard label="Payback" value={`${whatIf.summary.payback_years?.toFixed(1)} năm`} /></div> : <p className="muted">Chạy mô phỏng để xem FV, ROI và payback period.</p>}
           {prediction ? <p className="model-note">Giá dự đoán: <b>{money(prediction.predicted_price)}</b> | R² {prediction.model.r2.toFixed(3)} | MAE {money(prediction.model.mae)}</p> : null}
         </Panel>
-        <Panel title="Dự báo tăng trưởng (10 năm)" className="span-12">
+        <Panel title="Dự báo tăng trưởng (khung CEO)" className="span-12">
           {whatIf ? <ResponsiveContainer width="100%" height={380}><ComposedChart data={whatIf.projection}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="year" /><YAxis tickFormatter={(v) => `${(v / 1_000_000_000).toFixed(0)} tỷ`} /><Tooltip formatter={(v) => money(v)} /><Legend /><Area dataKey="confidence_high" name="Confidence high" fill="#dbeafe" stroke="none" fillOpacity={0.45} /><Area dataKey="confidence_low" name="Confidence low" fill="#ffffff" stroke="none" fillOpacity={1} /><Line dataKey="pessimistic" name="Xấu" stroke="#c2410c" strokeWidth={2} dot={false} /><Line dataKey="base" name="Cơ sở" stroke="#2563eb" strokeWidth={3} dot={false} /><Line dataKey="optimistic" name="Lạc quan" stroke="#0f766e" strokeWidth={2} dot={false} /></ComposedChart></ResponsiveContainer> : <p className="muted">Biểu đồ sẽ hiển thị 3 kịch bản và confidence band.</p>}
+          <p className="panel-note">Khi demo cho lãnh đạo, chỉ cần nói ba câu: xấu, cơ sở, lạc quan. Không cần đi sâu vào công thức trừ khi được hỏi thêm.</p>
         </Panel>
       </form>
     </>
@@ -476,9 +594,22 @@ function GisPage({ mapData }) {
 }
 
 function AiPage({ question, setQuestion, assistant, askAssistant }) {
+  const [aiView, setAiView] = useState("answer");
   return (
     <>
       <PageHeader eyebrow="AI Analyst" title="Trợ lý AI" description="RAG/LLM khai thác tri thức pháp lý, quy hoạch và dữ liệu BI có citation." />
+      <InsightHero
+        title="AI Analyst nên trả lời như một chuyên viên phân tích"
+        body="Mặc định chỉ hiển thị câu trả lời và trạng thái mô hình. Nguồn và context được ẩn bớt để màn hình sạch hơn, chỉ mở ra khi cần chứng minh citation."
+      />
+      <SectionTabs
+        tabs={[
+          { id: "answer", label: "Câu trả lời" },
+          { id: "sources", label: "Nguồn" }
+        ]}
+        active={aiView}
+        onChange={setAiView}
+      />
       <div className="grid-12">
         <Panel title="Câu hỏi phân tích" className="span-7">
           <div className="chat-box">
@@ -489,7 +620,7 @@ function AiPage({ question, setQuestion, assistant, askAssistant }) {
           {assistant ? <div className="answer-panel"><div className="meta-row"><span>{assistant.mode}</span><span>{assistant.model}</span><span>{assistant.llm_available ? "LLM online" : "fallback"}</span><span>{assistant.retrieval_time_ms} ms</span></div><MarkdownBlock text={assistant.answer} /></div> : null}
         </Panel>
         <Panel title="Thanh tra nguồn" className="span-5">
-          <div className="source-list">{(assistant?.sources || []).map((source) => <a key={source.title} href={source.source_url} target="_blank" rel="noreferrer" className="source-card"><strong>{source.title}</strong><span>{source.content}</span><small>{source.source_name} · score {source.score?.toFixed(2)}</small></a>)}</div>
+          {aiView === "sources" ? <div className="source-list">{(assistant?.sources || []).map((source) => <a key={source.title} href={source.source_url} target="_blank" rel="noreferrer" className="source-card"><strong>{source.title}</strong><span>{source.content}</span><small>{source.source_name} · score {source.score?.toFixed(2)}</small></a>)}</div> : <Disclosure title="Mở nguồn trích dẫn" defaultOpen={false} compact><div className="source-list">{(assistant?.sources || []).map((source) => <a key={source.title} href={source.source_url} target="_blank" rel="noreferrer" className="source-card"><strong>{source.title}</strong><span>{source.content}</span><small>{source.source_name} · score {source.score?.toFixed(2)}</small></a>)}</div></Disclosure>}
         </Panel>
       </div>
     </>
@@ -497,15 +628,29 @@ function AiPage({ question, setQuestion, assistant, askAssistant }) {
 }
 
 function DataOpsPage({ etl, refreshEtl, loading, ragStatus }) {
+  const [opsView, setOpsView] = useState("status");
   return (
     <>
       <PageHeader eyebrow="Data Operations" title="Giám sát vận hành dữ liệu" description="Theo dõi ETL gần real-time, nguồn công khai, transaction proxy và RAG index." />
+      <InsightHero
+        title="Data Ops dành cho analyst, không cần show hết cho CEO"
+        body="Phần trạng thái pipeline nên hiện mặc định. Log ETL và danh sách nguồn nên ẩn xuống để người xem không bị ngợp nếu mục tiêu chính là quyết định đầu tư."
+      />
+      <SectionTabs
+        tabs={[
+          { id: "status", label: "Pipeline status" },
+          { id: "logs", label: "ETL logs" },
+          { id: "sources", label: "Nguồn dữ liệu" }
+        ]}
+        active={opsView}
+        onChange={setOpsView}
+      />
       <div className="grid-12">
         <Panel title="Pipeline Status" className="span-12" action={<button className="primary-btn small" onClick={refreshEtl}>{loading ? "Đang refresh" : "Refresh ETL"}</button>}>
           <div className="kpi-grid compact"><KpiCard label="Transaction Proxy" value={(etl?.transaction_records || 0).toLocaleString("vi-VN")} /><KpiCard label="Planning Zones" value={(etl?.planning_zones || 0).toLocaleString("vi-VN")} /><KpiCard label="Legal Docs" value={(etl?.legal_documents || 0).toLocaleString("vi-VN")} /><KpiCard label="RAG Index" value={ragStatus ? `${ragStatus.documents} docs` : "Ready"} /></div>
         </Panel>
-        <Panel title="Nhật ký chạy ETL" className="span-7"><SimpleRuns runs={etl?.runs || []} /></Panel>
-        <Panel title="Trung tâm dữ liệu công cộng" className="span-5"><div className="source-list">{(etl?.sources || []).map((source) => <a className="source-card" href={source.url} target="_blank" rel="noreferrer" key={source.url}><strong>{source.name}</strong><span>{source.type}</span><small>{source.status}</small></a>)}</div></Panel>
+        <Panel title="Nhật ký chạy ETL" className="span-7">{opsView === "logs" ? <SimpleRuns runs={etl?.runs || []} /> : <Disclosure title="Mở ETL logs" compact><SimpleRuns runs={etl?.runs || []} /></Disclosure>}</Panel>
+        <Panel title="Trung tâm dữ liệu công cộng" className="span-5">{opsView === "sources" ? <div className="source-list">{(etl?.sources || []).map((source) => <a className="source-card" href={source.url} target="_blank" rel="noreferrer" key={source.url}><strong>{source.name}</strong><span>{source.type}</span><small>{source.status}</small></a>)}</div> : <Disclosure title="Mở danh sách nguồn" compact><div className="source-list">{(etl?.sources || []).map((source) => <a className="source-card" href={source.url} target="_blank" rel="noreferrer" key={source.url}><strong>{source.name}</strong><span>{source.type}</span><small>{source.status}</small></a>)}</div></Disclosure>}</Panel>
       </div>
     </>
   );
@@ -527,13 +672,27 @@ function ExplorerPage({ analytics }) {
 }
 
 function MethodPage({ methodology }) {
+  const [methodView, setMethodView] = useState("problem");
   return (
     <>
       <PageHeader eyebrow="Methodology & Baseline" title="Phương pháp, dữ liệu và hệ thống thông tin" description="Giải thích bài toán, phương pháp BI/DSS/EIS, baseline model và RAG architecture." />
+      <InsightHero
+        title="Trang này nên phục vụ giảng viên và phản biện"
+        body="Vì tính kỹ thuật cao, nội dung được chia thành từng lớp. Người xem bình thường chỉ cần đọc bài toán và mapping hệ thống; phần RAG architecture để mở khi cần."
+      />
+      <SectionTabs
+        tabs={[
+          { id: "problem", label: "Bài toán" },
+          { id: "systems", label: "MIS / DSS / EIS" },
+          { id: "rag", label: "RAG note" }
+        ]}
+        active={methodView}
+        onChange={setMethodView}
+      />
       <div className="grid-12">
-        <Panel title="Problem & Method" className="span-7"><p>{methodology?.problem}</p><div className="method-list">{(methodology?.methods || []).map((item) => <p key={item}>• {item}</p>)}</div></Panel>
-        <Panel title="MIS/DSS/EIS Mapping" className="span-5"><div className="system-grid">{(methodology?.information_systems || []).map((item) => <article key={item.type}><strong>{item.type}</strong><p>{item.mapping}</p></article>)}</div></Panel>
-        <Panel title="RAG Architecture Note" className="span-12"><p>Prototype dùng sentence-transformers + sklearn NearestNeighbors cho cosine similarity search. Khi production, retrieval layer có thể migrate sang ChromaDB, FAISS, Milvus hoặc pgvector để hỗ trợ persistence, metadata filtering và scale lớn hơn.</p></Panel>
+        {methodView === "problem" ? <Panel title="Problem & Method" className="span-7"><p>{methodology?.problem}</p><div className="method-list">{(methodology?.methods || []).map((item) => <p key={item}>• {item}</p>)}</div></Panel> : null}
+        {methodView === "systems" || methodView === "problem" ? <Panel title="MIS/DSS/EIS Mapping" className={methodView === "systems" ? "span-12" : "span-5"}><div className="system-grid">{(methodology?.information_systems || []).map((item) => <article key={item.type}><strong>{item.type}</strong><p>{item.mapping}</p></article>)}</div></Panel> : null}
+        <Panel title="RAG Architecture Note" className="span-12">{methodView === "rag" ? <p>Prototype dùng sentence-transformers + sklearn NearestNeighbors cho cosine similarity search. Khi production, retrieval layer có thể migrate sang ChromaDB, FAISS, Milvus hoặc pgvector để hỗ trợ persistence, metadata filtering và scale lớn hơn.</p> : <Disclosure title="Mở ghi chú RAG architecture" compact><p>Prototype dùng sentence-transformers + sklearn NearestNeighbors cho cosine similarity search. Khi production, retrieval layer có thể migrate sang ChromaDB, FAISS, Milvus hoặc pgvector để hỗ trợ persistence, metadata filtering và scale lớn hơn.</p></Disclosure>}</Panel>
       </div>
     </>
   );
@@ -544,10 +703,14 @@ function ReportPage({ analytics, whatIf, assistant }) {
   return (
     <>
       <PageHeader eyebrow="Executive Report" title="Báo cáo lãnh đạo" description="Tóm tắt phát hiện chính, khuyến nghị và nguồn giải thích để trình bày." />
+      <InsightHero
+        title={`CEO summary: ${kpis.best_district || "Khu ưu tiên"} nên vào shortlist đầu tư`}
+        body={`ROI trung bình thị trường hiện tại ${pct(kpis.avg_roi)} với ${(kpis.transaction_count || 0).toLocaleString("vi-VN")} transaction proxy. Màn hình này chỉ giữ các kết luận cần hành động, không lộ phần kỹ thuật.`}
+      />
       <div className="grid-12">
         <Panel title="Key Findings" className="span-6"><ul className="memo-list"><li>Khu ưu tiên: <b>{kpis.best_district}</b> ({(kpis.best_score || 0).toFixed(1)}/100)</li><li>ROI trung bình: <b>{pct(kpis.avg_roi)}</b></li><li>Transaction proxy: <b>{(kpis.transaction_count || 0).toLocaleString("vi-VN")}</b></li></ul></Panel>
         <Panel title="Decision Memo" className="span-6">{assistant?.answer ? <MarkdownBlock text={assistant.answer} /> : <p>Chạy AI Analyst để tạo memo có citation cho báo cáo lãnh đạo.</p>}</Panel>
-        <Panel title="What-If Summary" className="span-12">{whatIf ? <div className="kpi-grid compact"><KpiCard label="Future Value" value={money(whatIf.summary.future_value)} /><KpiCard label="Cumulative ROI" value={pct(whatIf.summary.cumulative_roi_pct)} /><KpiCard label="Payback" value={`${whatIf.summary.payback_years?.toFixed(1)} năm`} /></div> : <p className="muted">Chạy Decision Lab để đưa What-If vào báo cáo.</p>}</Panel>
+        <Panel title="What-If Summary" className="span-12">{whatIf ? <div className="kpi-grid compact"><KpiCard label="Future Value" value={money(whatIf.summary.future_value)} /><KpiCard label="Cumulative ROI" value={pct(whatIf.summary.cumulative_roi_pct)} /><KpiCard label="Payback" value={`${whatIf.summary.payback_years?.toFixed(1)} năm`} /></div> : <p className="muted">Chạy Decision Lab để đưa What-If vào báo cáo.</p>}<Disclosure title="Mở memo kỹ thuật & context" compact><p className="muted">Phần này dùng khi cần giải thích sâu hơn về cách AI tạo recommendation và cách What-If tính các chỉ số.</p></Disclosure></Panel>
       </div>
     </>
   );
