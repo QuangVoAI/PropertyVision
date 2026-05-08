@@ -19,7 +19,7 @@ import pandas as pd
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from huggingface_hub import InferenceClient, hf_hub_download, list_repo_files
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -36,6 +36,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+FRONTEND_DIST_DIR = ROOT_DIR / "frontend" / "dist"
 DATASETS_DIR = ROOT_DIR / "datasets"
 MERGED_DATA_PATH = DATASETS_DIR / "clean_dataset.csv"
 DATA_PATH = DATASETS_DIR / "raw" / "clean_data.csv"
@@ -4613,3 +4614,17 @@ def rag_reindex() -> dict[str, Any]:
         "mode": index["mode"],
         "documents": len(index["docs"]),
     }
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def serve_frontend(full_path: str) -> FileResponse:
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Not found")
+    if FRONTEND_DIST_DIR.exists():
+        asset_path = FRONTEND_DIST_DIR / full_path
+        if full_path and asset_path.is_file():
+            return FileResponse(asset_path)
+        index_path = FRONTEND_DIST_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+    raise HTTPException(status_code=404, detail="Frontend build not found")

@@ -29,6 +29,7 @@
 - [What You Get](#what-you-get)
 - [Quick Start](#quick-start)
 - [Environment Variables](#environment-variables)
+- [Hugging Face Space](#hugging-face-space)
 - [Metro Impact Data](#metro-impact-data)
 - [Useful Backend Endpoints](#useful-backend-endpoints)
 - [Documentation](#documentation)
@@ -160,6 +161,16 @@ Frontend URL:
 ```text
 http://localhost:5173
 ```
+
+## Hugging Face Space
+
+This repository already includes a `Dockerfile`, so you can upload it to **Hugging Face Spaces** as a Docker Space with minimal extra work.
+
+- The backend serves the built frontend from `frontend/dist`
+- The app runs on port `7860` in Spaces
+- Use the root `README.md` as the Space landing page
+
+If you want a shorter Vietnamese guide for the same project, see [README.vi.md](README.vi.md).
 
 ## Environment Variables
 
