@@ -108,6 +108,51 @@ function pct(value) {
   return `${Number(value).toFixed(2)}%`;
 }
 
+function riskPriority(riskLevel) {
+  if (riskLevel === "high") return 3;
+  if (riskLevel === "medium") return 2;
+  return 1;
+}
+
+function groupMapMarkers(rows = []) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const latitude = Number(row.latitude);
+    const longitude = Number(row.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    const key = `${latitude.toFixed(4)}:${longitude.toFixed(4)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  });
+
+  return [...groups.values()]
+    .map((items) => {
+      const sortedByScore = [...items].sort((a, b) => Number(b.opportunity_score || 0) - Number(a.opportunity_score || 0));
+      const primary = sortedByScore[0];
+      const riskOrder = [...items].sort((a, b) => riskPriority(b.risk_level) - riskPriority(a.risk_level));
+      const dominantRisk = riskOrder[0]?.risk_level || primary?.risk_level || "medium";
+      return {
+        ...primary,
+        district: items.length === 1 ? primary.district : `${primary.district} +${items.length - 1}`,
+        districts: items.map((item) => item.district),
+        district_count: items.length,
+        aggregate_opportunity_score: Number(primary.opportunity_score || 0),
+        aggregate_roi_pct: Number(primary.roi_pct || 0),
+        risk_level: dominantRisk,
+        planning_note: items.length > 1 ? `Có ${items.length} khu cùng tọa độ. Khu nổi bật: ${primary.district}.` : primary.planning_note
+      };
+    })
+    .sort((a, b) => Number(b.aggregate_opportunity_score || 0) - Number(a.aggregate_opportunity_score || 0));
+}
+
+function markerScore(row) {
+  return Number(row?.aggregate_opportunity_score ?? row?.opportunity_score ?? 0);
+}
+
+function markerRoi(row) {
+  return Number(row?.aggregate_roi_pct ?? row?.roi_pct ?? 0);
+}
+
 function formatDateTime(value) {
   if (!value) return "Chưa cập nhật";
   const date = new Date(value);
@@ -739,6 +784,45 @@ function buildGrowthWhatIfPayload(predictForm, simulationForm, filters, growthPc
   };
 }
 
+function buildOverviewGrowthPayload(analytics, filters, growthPct) {
+  const kpis = analytics?.kpis || {};
+  const districts = analytics?.districts || [];
+  const types = analytics?.types || [];
+  const samples = analytics?.samples || [];
+  const topDistrict = kpis.best_district || districts[0]?.district || (filters?.city || "TP Hồ Chí Minh");
+  const bestType = types[0]?.["Type of House"] || types[0]?.type || samples[0]?.["Type of House"] || "Nhà mặt tiền";
+  const bestLegal = samples[0]?.["Legal Documents"] || "Sổ hồng";
+  const avgArea = Number(districts[0]?.avg_area || samples[0]?.area || 80);
+  const budgetSource = Number(kpis.avg_transaction_price || kpis.median_price || kpis.total_value / Math.max(1, kpis.listings || 1) || 0);
+  const budgetVnd = Math.max(1, budgetSource || 1);
+  const roiExpected = Number.isFinite(Number(kpis.avg_roi)) ? Number(kpis.avg_roi) / 100 : 0.14;
+
+  return {
+    district: topDistrict,
+    property_type: bestType,
+    legal_documents: bestLegal,
+    area: Math.max(1, avgArea),
+    bedrooms: null,
+    toilets: null,
+    floors: null,
+    roi_expected: roiExpected,
+    budget_vnd: budgetVnd,
+    annual_growth_pct: Number(growthPct),
+    years: 25,
+    filters: {
+      city: filters?.city || "TP Hồ Chí Minh",
+      districts: kpis.best_district ? [kpis.best_district] : [],
+      property_types: bestType ? [bestType] : [],
+      price_min: null,
+      price_max: null,
+      area_min: null,
+      area_max: null,
+      roi_min: null,
+      roi_max: null
+    }
+  };
+}
+
 function buildReportQuestion(analytics, filters) {
   const best = analytics?.kpis?.best_district || "khu vực dẫn đầu";
   const risky = (analytics?.risky || []).slice(0, 3).map((row) => row.district).filter(Boolean);
@@ -989,7 +1073,7 @@ function AppShell({ activePage, setActivePage, children, loading, metadata, filt
             {hasActiveFilters ? <button type="button" className="clear-filters-btn" onClick={resetFilters}>Xóa bộ lọc</button> : null}
           </div>
         </div>
-        <strong>Hệ thống Hỗ trợ Quyết định</strong>
+        <strong></strong>
         <div className="top-actions">
           <button type="button" className="filter-drawer-trigger" onClick={() => setFiltersOpen(true)}>
             <Icon name="tune" />
@@ -1146,7 +1230,7 @@ function GlobalFilters({ metadata, filters, setFilters, open, onClose }) {
   );
 }
 
-function OverviewPage({ activePage, analytics, typeShare, filters, predictForm, simulationForm }) {
+function OverviewPage({ activePage, analytics, typeShare, filters }) {
   const kpis = analytics?.kpis || {};
   const [growthStressPct, setGrowthStressPct] = useState(8);
   const [liveGrowthRecommendation, setLiveGrowthRecommendation] = useState(null);
@@ -1160,8 +1244,8 @@ function OverviewPage({ activePage, analytics, typeShare, filters, predictForm, 
     [kpis, analytics?.risky, growthStressPct]
   );
   const growthPayload = useMemo(
-    () => buildGrowthWhatIfPayload(predictForm || {}, simulationForm || {}, filters || emptyFilters, growthStressPct),
-    [filters, predictForm, simulationForm, growthStressPct]
+    () => buildOverviewGrowthPayload(analytics || {}, filters || emptyFilters, growthStressPct),
+    [analytics, filters, growthStressPct]
   );
 
   useEffect(() => {
@@ -1237,6 +1321,7 @@ function OverviewPage({ activePage, analytics, typeShare, filters, predictForm, 
               Tăng trưởng giả định: {growthStressPct.toFixed(1)}%
               <input type="range" min="-5" max="18" step="0.5" value={growthStressPct} onChange={(e) => setGrowthStressPct(Number(e.target.value))} />
             </label>
+            <small className="panel-note">Dữ liệu kiểm tra được lấy từ KPI và khu vực dẫn đầu đang hiển thị trên trang này.</small>
           </div>
           <div className={`scenario-recommendation tone-${growthStatus === "error" ? "warn" : growthStatus === "ready" ? "good" : "neutral"}`}>
             <div className="scenario-recommendation-head">
@@ -1799,22 +1884,23 @@ function GisPage({ mapData, analytics }) {
   const center = mapData?.center || { latitude: 10.78, longitude: 106.7, zoom: 10 };
   const lastRefresh = analytics?.kpis?.last_data_refresh;
   const districts = mapData?.districts || [];
-  const maxRoi = districts.length ? Math.max(...districts.map((row) => Number(row.roi_pct || 0))) : 0;
-  const maxScore = districts.length ? Math.max(...districts.map((row) => Number(row.opportunity_score || 0))) : 0;
+  const markers = useMemo(() => groupMapMarkers(districts), [districts]);
+  const maxRoi = markers.length ? Math.max(...markers.map((row) => markerRoi(row))) : 0;
+  const maxScore = markers.length ? Math.max(...markers.map((row) => markerScore(row))) : 0;
   const filteredDistricts = useMemo(
-    () => districts.filter((row) => {
-      const roi = Number(row.roi_pct || 0);
-      const score = Number(row.opportunity_score || 0);
+    () => markers.filter((row) => {
+      const roi = markerRoi(row);
+      const score = markerScore(row);
       const riskMatch = riskFilter === "all" || row.risk_level === riskFilter;
       return riskMatch && roi >= Number(minRoi || 0) && score >= Number(minScore || 0);
     }),
-    [districts, riskFilter, minRoi, minScore]
+    [markers, riskFilter, minRoi, minScore]
   );
-  const leading = [...filteredDistricts].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 3);
-  const watchlist = [...filteredDistricts].filter((row) => row.risk_level === "high").sort((a, b) => a.opportunity_score - b.opportunity_score).slice(0, 4);
-  const avgRoi = districts.length ? districts.reduce((sum, row) => sum + Number(row.roi_pct || 0), 0) / districts.length : 0;
-  const avgScore = districts.length ? districts.reduce((sum, row) => sum + Number(row.opportunity_score || 0), 0) / districts.length : 0;
-  const chartRows = [...filteredDistricts].sort((a, b) => b.roi_pct - a.roi_pct).slice(0, 5);
+  const leading = [...filteredDistricts].sort((a, b) => markerScore(b) - markerScore(a)).slice(0, 3);
+  const watchlist = [...filteredDistricts].filter((row) => row.risk_level === "high").sort((a, b) => markerScore(a) - markerScore(b)).slice(0, 4);
+  const avgRoi = markers.length ? markers.reduce((sum, row) => sum + markerRoi(row), 0) / markers.length : 0;
+  const avgScore = markers.length ? markers.reduce((sum, row) => sum + markerScore(row), 0) / markers.length : 0;
+  const chartRows = [...filteredDistricts].sort((a, b) => markerRoi(b) - markerRoi(a)).slice(0, 5);
   return (
     <>
       <PageHeader eyebrow="Bản đồ quy hoạch" title="Bản đồ và quy hoạch" description="Phân tích điểm cơ hội và mức độ rủi ro theo không gian." />
@@ -1850,9 +1936,41 @@ function GisPage({ mapData, analytics }) {
               Bỏ lọc
             </button>
           </div>
-          <MapContainer key={mapData?.city || "default-city"} center={[center.latitude, center.longitude]} zoom={center.zoom || 10} scrollWheelZoom={false} className="leaflet-panel main-map">
+          <p className="map-interaction-hint">Có thể kéo để di chuyển, lăn chuột hoặc chụm hai ngón để zoom.</p>
+          <MapContainer
+            key={mapData?.city || "default-city"}
+            center={[center.latitude, center.longitude]}
+            zoom={center.zoom || 10}
+            scrollWheelZoom
+            dragging
+            touchZoom
+            doubleClickZoom
+            boxZoom
+            zoomControl
+            className="leaflet-panel main-map"
+          >
             <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {(filteredDistricts.length ? filteredDistricts : districts).map((row) => <CircleMarker key={row.district} center={[row.latitude, row.longitude]} radius={Math.max(8, Math.min(30, row.opportunity_score / 3))} pathOptions={{ color: row.risk_level === "low" ? "#0f766e" : row.risk_level === "high" ? "#c2410c" : "#d97706", fillOpacity: 0.62 }}><Popup><strong>{row.district}</strong><p>Score {row.opportunity_score.toFixed(1)}</p><p>ROI {row.roi_pct.toFixed(2)}%</p><p>{row.planning_note}</p></Popup></CircleMarker>)}
+            {(filteredDistricts.length ? filteredDistricts : markers).map((row) => {
+              const scoreValue = markerScore(row);
+              const roiValue = markerRoi(row);
+              const markerLabel = row.district_count > 1 ? `${row.district} · ${row.district_count} khu` : row.district;
+              return (
+                <CircleMarker
+                  key={`${row.latitude}-${row.longitude}-${row.district}`}
+                  center={[row.latitude, row.longitude]}
+                  radius={Math.max(8, Math.min(30, scoreValue / 3))}
+                  pathOptions={{ color: row.risk_level === "low" ? "#0f766e" : row.risk_level === "high" ? "#c2410c" : "#d97706", fillOpacity: 0.62 }}
+                >
+                  <Popup>
+                    <strong>{markerLabel}</strong>
+                    {row.district_count > 1 ? <p>{row.districts.join(" · ")}</p> : null}
+                    <p>Score {scoreValue.toFixed(1)}</p>
+                    <p>ROI {roiValue.toFixed(2)}%</p>
+                    <p>{row.planning_note}</p>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
           </MapContainer>
           <div className="map-footer-grid">
             <article className="map-fact-card">
@@ -1861,7 +1979,7 @@ function GisPage({ mapData, analytics }) {
             </article>
             <article className="map-fact-card">
               <span>Số khu vực</span>
-              <strong>{districts.length.toLocaleString("vi-VN")}</strong>
+              <strong>{markers.length.toLocaleString("vi-VN")}</strong>
               <small>Các điểm trên bản đồ đang khớp với thành phố và bộ lọc hiện tại.</small>
             </article>
             {leading.map((row) => (
@@ -1991,7 +2109,7 @@ function DataOpsPage({ etl, refreshEtl, loading, ragStatus }) {
       <PageHeader eyebrow="Theo dõi dữ liệu" title="Giám sát vận hành dữ liệu" description="Theo dõi trạng thái nạp dữ liệu, quy hoạch và kho tri thức AI." />
       <div className="grid-12">
         <Panel title="Tình trạng dữ liệu" className="span-12" action={<button className="primary-btn small" onClick={refreshEtl}>{loading ? "Đang cập nhật" : "Cập nhật dữ liệu"}</button>}>
-          <div className="kpi-grid compact"><KpiCard label="Bản ghi thị trường" value={(etl?.transaction_records || 0).toLocaleString("vi-VN")} /><KpiCard label="Lớp quy hoạch" value={(etl?.planning_zones || 0).toLocaleString("vi-VN")} /><KpiCard label="Tài liệu pháp lý" value={(etl?.legal_documents || 0).toLocaleString("vi-VN")} /><KpiCard label="Kho tri thức AI" value={ragStatus ? `${ragStatus.documents} tài liệu` : "Sẵn sàng"} /></div>
+          <div className="kpi-grid compact"><KpiCard label="Bản ghi thị trường" value={(etl?.transaction_records || 0).toLocaleString("vi-VN")} /><KpiCard label="Lớp quy hoạch" value={(etl?.planning_zones || 0).toLocaleString("vi-VN")} /><KpiCard label="Tài liệu pháp lý" value={(etl?.legal_documents || 0).toLocaleString("vi-VN")} /><KpiCard label="Metro impact" value={(etl?.metro_impacts || 0).toLocaleString("vi-VN")} /><KpiCard label="Kho tri thức AI" value={ragStatus ? `${ragStatus.documents} tài liệu` : "Sẵn sàng"} /></div>
         </Panel>
         <Panel title="Nhật ký cập nhật dữ liệu" className="span-7"><SimpleRuns runs={etl?.runs || []} /></Panel>
         <Panel title="Trung tâm dữ liệu công cộng" className="span-5"><div className="source-list">{(etl?.sources || []).map((source) => <a className="source-card" href={source.url} target="_blank" rel="noreferrer" key={source.url}><strong>{source.name}</strong><span>{source.type}</span><small>{source.status}</small></a>)}</div></Panel>
@@ -2538,19 +2656,20 @@ function App() {
   if (error) return <div className="boot-error">{error}</div>;
   if (!metadata || !analytics) return <div className="boot">Đang khởi tạo PropertyVision...</div>;
 
-  const pageProps = { activePage, analytics, typeShare, sliceDice, sliceConfig, setSliceConfig, metadata, filters, decisionView, setDecisionView, predictForm, setPredictForm, simulationForm, setSimulationForm, prediction, whatIf, aiRecommendation, runWhatIf, simulationLoading, simulationStage, mapData, etl, refreshEtl, loading, ragStatus, question, setQuestion, assistant, assistantLoading, askAssistant, reportNote, reportNoteLoading };
+  const sharedPageProps = { activePage, analytics, typeShare, sliceDice, sliceConfig, setSliceConfig, metadata, filters, mapData, etl, refreshEtl, loading, ragStatus, question, setQuestion, assistant, assistantLoading, askAssistant, reportNote, reportNoteLoading };
+  const decisionPageProps = { ...sharedPageProps, decisionView, setDecisionView, predictForm, setPredictForm, simulationForm, setSimulationForm, prediction, whatIf, aiRecommendation, runWhatIf, simulationLoading, simulationStage };
 
   return (
     <AppShell activePage={activePage} setActivePage={setActivePage} loading={loading} metadata={metadata} filters={filters} setFilters={setFilters} aiRuntime={aiRuntime} analytics={analytics} etl={etl}>
-      {activePage === "overview" && <OverviewPage {...pageProps} />}
-      {activePage === "market" && <MarketPage {...pageProps} />}
-      {activePage === "slice" && <SlicePage {...pageProps} />}
-      {activePage === "decision" && <DecisionPage {...pageProps} />}
-      {activePage === "gis" && <GisPage {...pageProps} />}
-      {activePage === "ai" && <AiPage {...pageProps} />}
-      {activePage === "ops" && <DataOpsPage {...pageProps} />}
-      {activePage === "explorer" && <ExplorerPage {...pageProps} />}
-      {activePage === "report" && <ReportPage {...pageProps} />}
+      {activePage === "overview" && <OverviewPage {...sharedPageProps} />}
+      {activePage === "market" && <MarketPage {...sharedPageProps} />}
+      {activePage === "slice" && <SlicePage {...sharedPageProps} />}
+      {activePage === "decision" && <DecisionPage {...decisionPageProps} />}
+      {activePage === "gis" && <GisPage {...sharedPageProps} />}
+      {activePage === "ai" && <AiPage {...sharedPageProps} />}
+      {activePage === "ops" && <DataOpsPage {...sharedPageProps} />}
+      {activePage === "explorer" && <ExplorerPage {...sharedPageProps} />}
+      {activePage === "report" && <ReportPage {...sharedPageProps} />}
     </AppShell>
   );
 }

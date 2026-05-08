@@ -169,6 +169,42 @@ PUBLIC_SOURCES = [
         "url": "https://www.kaggle.com/datasets/trnduythanhkhttt/housepricinghcm/data",
         "status": "cached-local-proxy",
     },
+    {
+        "name": "MAUR HCMC Metro line 1",
+        "type": "metro / station planning",
+        "url": "https://maur.hochiminhcity.gov.vn/web/en/metro-line-1",
+        "status": "public-source",
+    },
+    {
+        "name": "MAUR Ben Thanh Central Station",
+        "type": "metro / station planning",
+        "url": "https://www.maur.hochiminhcity.gov.vn/web/en/ben-thanh-central-station",
+        "status": "public-source",
+    },
+    {
+        "name": "HCMC TOD corridor planning",
+        "type": "metro / TOD policy",
+        "url": "https://ttbc-hcm.gov.vn/trien-khai-mo-hinh-tod-doc-tuyen-metro-so-1-duong-vanh-dai-3-tphcm-1003633.html",
+        "status": "public-source",
+    },
+    {
+        "name": "MAUR Metro line 2",
+        "type": "metro / station planning",
+        "url": "https://maur.hochiminhcity.gov.vn/web/en/metro-line-2",
+        "status": "public-source",
+    },
+    {
+        "name": "Hanoi metro TOD framework",
+        "type": "metro / TOD policy",
+        "url": "https://hanoi.gov.vn/tin-tuc-su-kien-noi-bat/phat-trien-do-thi-theo-mo-hinh-tod-kinh-nghiem-quoc-te-va-giai-phap-khuyen-nghi-cho-ha-noi-4250108102117461.htm",
+        "status": "public-source",
+    },
+    {
+        "name": "Hanoi Urban Railway Line 5",
+        "type": "metro / station planning",
+        "url": "https://vqh.hanoi.gov.vn/index.php?language=vi&nv=news&op=tin-lien-ket%2Fha-noi-dau-tu-xay-dung-tuyen-duong-sat-do-thi-so-5-van-cao-ngoc-khanh-lang-hoa-lac-2904.html",
+        "status": "public-source",
+    },
 ]
 
 app = FastAPI(title="PropertyVision BI API", version="2.0.0")
@@ -941,6 +977,21 @@ def ensure_operational_tables() -> None:
                 updated_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS metro_impact_profiles (
+                metro_impact_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                city TEXT NOT NULL,
+                station_name TEXT NOT NULL,
+                line_name TEXT NOT NULL,
+                impact_band TEXT NOT NULL,
+                uplift_low_pct REAL,
+                uplift_high_pct REAL,
+                distance_band TEXT NOT NULL,
+                evidence_note TEXT NOT NULL,
+                source_name TEXT NOT NULL,
+                source_url TEXT,
+                updated_at TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS etl_runs (
                 run_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source_name TEXT NOT NULL,
@@ -1010,6 +1061,146 @@ def planning_description(district: str, avg_roi: float, avg_price_m2: float) -> 
         "Khu vực cần kiểm soát kỹ thanh khoản và tính pháp lý trước khi giải ngân.",
         "medium",
     )
+
+
+def metro_documents() -> list[tuple[str, str, str | None, str, str, str | None]]:
+    return [
+        (
+            "Ben Thanh Central Station - interchange and underground commercial hub",
+            "metro-official",
+            "TP Hồ Chí Minh",
+            (
+                "Ga Bến Thành là ga trung chuyển của 4 tuyến metro (1, 2, 3a, 4) và gắn với trung tâm thương mại ngầm. "
+                "Vị trí tại Quảng trường Quách Thị Trang làm cho khu vực lõi trung tâm quanh ga có ý nghĩa cao về "
+                "khả năng đi bộ, thương mại tầng ngầm, dòng khách và premium vị trí đối với bất động sản trung tâm."
+            ),
+            "MAUR HCMC",
+            "https://www.maur.hochiminhcity.gov.vn/web/en/ben-thanh-central-station",
+        ),
+        (
+            "Ben Thanh station - metro line 1 corridor and CBD impact",
+            "metro-official",
+            "TP Hồ Chí Minh",
+            (
+                "Nhà ga Bến Thành thuộc tuyến metro số 1 nằm trong đoạn ngầm trung tâm của thành phố và là một trong "
+                "ba ga ngầm của tuyến. Khu vực này thường được đọc như một lõi CBD, nơi tác động của metro thể hiện "
+                "qua giá trị đất, khả năng khai thác thương mại và sức hút với các tài sản có vị trí mặt tiền hoặc cận ga."
+            ),
+            "MAUR HCMC",
+            "https://maur.hochiminhcity.gov.vn/web/bqlds/tin-noi-bat/-/ext/articleview/article/2028391/14%3Bjsessionid%3D7D569DAF288BE9BB317CA1F55E224F04?_EXT_ARTICLEVIEW_advancedSearch=false&_EXT_ARTICLEVIEW_andOperator=true&_EXT_ARTICLEVIEW_content=&_EXT_ARTICLEVIEW_cur=18&_EXT_ARTICLEVIEW_curValue=0&_EXT_ARTICLEVIEW_delta=20&_EXT_ARTICLEVIEW_description=&_EXT_ARTICLEVIEW_i=329&_EXT_ARTICLEVIEW_keywords=&_EXT_ARTICLEVIEW_orderByCol=display-date&_EXT_ARTICLEVIEW_orderByType=desc&_EXT_ARTICLEVIEW_redirect=%2Fweb%2Fbqlds%2F&_EXT_ARTICLEVIEW_searchArticleId=&_EXT_ARTICLEVIEW_status=approved&_EXT_ARTICLEVIEW_structureId=&_EXT_ARTICLEVIEW_templateId=&_EXT_ARTICLEVIEW_title=&_EXT_ARTICLEVIEW_type=&_EXT_ARTICLEVIEW_version=1.0",
+        ),
+        (
+            "Tham Luong station - metro line 2 gateway and western hub",
+            "metro-official",
+            "TP Hồ Chí Minh",
+            (
+                "Tham Lương là điểm quan trọng trên tuyến metro số 2 Bến Thành - Tham Lương, đồng thời gắn với depot của "
+                "giai đoạn 1 tại phường Tân Thới Nhất, Quận 12. Khu vực quanh ga thường phù hợp để theo dõi về khả năng "
+                "kết nối, quỹ đất phát triển và tác động đến thanh khoản của các sản phẩm phía tây thành phố."
+            ),
+            "MAUR HCMC",
+            "https://maur.hochiminhcity.gov.vn/web/en/metro-line-2",
+        ),
+        (
+            "Metro impact primer - transit-oriented development",
+            "metro-research-note",
+            None,
+            (
+                "Các ga metro thường tạo hiệu ứng lan tỏa lên bất động sản trong bán kính đi bộ: "
+                "tăng khả năng kết nối, cải thiện thanh khoản và hỗ trợ định giá những sản phẩm gần trạm. "
+                "Tác động mạnh nhất thường xuất hiện ở các khu có mật độ sử dụng cao, hạ tầng đồng bộ và "
+                "khả năng tiếp cận last-mile tốt."
+            ),
+            "PropertyVision metro research note",
+            None,
+        ),
+        (
+            "Metro station catchment - pricing and liquidity",
+            "metro-research-note",
+            None,
+            (
+                "Vùng ảnh hưởng của ga metro nên được đọc theo các vòng bán kính khác nhau: "
+                "đi bộ gần ga thường có premium tốt hơn, vùng trung gian hưởng lợi ở thanh khoản, "
+                "còn vùng xa hơn hưởng lợi gián tiếp qua chỉnh trang đô thị và mở rộng dòng di chuyển."
+            ),
+            "PropertyVision metro research note",
+            None,
+        ),
+        (
+            "Metro corridor - investment screening",
+            "metro-research-note",
+            None,
+            (
+                "Khi đánh giá đầu tư theo hành lang metro, cần so sánh mức premium giá, tốc độ hấp thụ, "
+                "quy hoạch hạ tầng phụ trợ và khả năng hoàn thiện của từng đoạn tuyến. "
+                "Nếu quy hoạch ga đã rõ nhưng hạ tầng kết nối chưa xong, nên ưu tiên chiến lược theo dõi hơn là giải ngân mạnh."
+            ),
+            "PropertyVision metro research note",
+            None,
+        ),
+    ]
+
+
+def metro_impact_profiles() -> list[dict[str, Any]]:
+    return [
+        {
+            "city": "TP Hồ Chí Minh",
+            "station_name": "Bến Thành",
+            "line_name": "Metro line 1",
+            "impact_band": "observed",
+            "uplift_low_pct": 12.0,
+            "uplift_high_pct": 12.4,
+            "distance_band": "Within station catchment",
+            "evidence_note": "Station-level studies on Metro Line 1 report about 12.0-12.4% higher property/land prices near stations than farther away.",
+            "source_name": "Metro Line 1 TOD studies",
+            "source_url": "https://www.researchgate.net/publication/392903178_The_Impact_of_Metro_Line_1_on_the_Land_Price_in_the_TOD_Planning_Model_in_Ho_Chi_Minh_City_Vietnam",
+        },
+        {
+            "city": "TP Hồ Chí Minh",
+            "station_name": "Tham Lương",
+            "line_name": "Metro line 2",
+            "impact_band": "policy",
+            "uplift_low_pct": None,
+            "uplift_high_pct": None,
+            "distance_band": "Western corridor / station gateway",
+            "evidence_note": "Official MAUR planning notes show Tham Lương as a key gateway on Metro Line 2; treat as a corridor premium candidate, but station-level uplift is not quantified in the source.",
+            "source_name": "MAUR HCMC",
+            "source_url": "https://maur.hochiminhcity.gov.vn/web/en/metro-line-2",
+        },
+        {
+            "city": "Hà Nội",
+            "station_name": "Nhổn - ga Hà Nội corridor",
+            "line_name": "Urban railway / TOD framework",
+            "impact_band": "policy",
+            "uplift_low_pct": None,
+            "uplift_high_pct": None,
+            "distance_band": "TOD / corridor planning",
+            "evidence_note": "Hanoi MRT and TOD papers support positive property-value capture and land-use-control effects, but the source set does not give a single station-level percentage to apply universally.",
+            "source_name": "Hanoi TOD / accessibility studies",
+            "source_url": "https://www.researchgate.net/publication/342850071_Analyzing_the_impact_of_accessibility_on_property_price_by_using_hedonic-price_modelling_for_supporting_urban_land_management_towards_TOD_in_Hanoi_Vietnam",
+        },
+        {
+            "city": "Hà Nội",
+            "station_name": "Line 5 western corridor",
+            "line_name": "Metro line 5",
+            "impact_band": "policy",
+            "uplift_low_pct": None,
+            "uplift_high_pct": None,
+            "distance_band": "West corridor / future TOD",
+            "evidence_note": "The approved 40 km Line 5 corridor suggests future value-capture opportunities, but current public sources are planning-focused rather than station-uplift quantified.",
+            "source_name": "Hanoi Urban Planning Institute",
+            "source_url": "https://vqh.hanoi.gov.vn/index.php?language=vi&nv=news&op=tin-lien-ket%2Fha-noi-phe-duyet-tuyen-duong-sat-do-thi-so-5-dai-gan-40km-3049.html",
+        },
+    ]
+
+
+def infer_metro_city(title: str, source_name: str, source_url: str | None) -> str | None:
+    haystack = " ".join([title, source_name, source_url or ""]).lower()
+    if "hanoi" in haystack or "hà nội" in haystack or "vqh.hanoi.gov.vn" in haystack:
+        return "Hà Nội"
+    if "hcm" in haystack or "ho chi minh" in haystack or "tphcm" in haystack or "maur" in haystack or "ben thanh" in haystack or "tham luong" in haystack:
+        return "TP Hồ Chí Minh"
+    return None
 
 
 def seed_planning_and_documents() -> dict[str, int]:
@@ -1109,6 +1300,7 @@ def seed_planning_and_documents() -> dict[str, int]:
                 "https://vietnam.opendevelopmentmekong.net/news/hcmc-launches-online-land-data-platform/",
             ),
         ]
+        general_docs.extend(metro_documents())
         for title, doc_type, district, content, source_name, source_url in general_docs:
             existing = con.execute("SELECT 1 FROM legal_documents WHERE title = ? LIMIT 1", (title,)).fetchone()
             if not existing:
@@ -1120,6 +1312,36 @@ def seed_planning_and_documents() -> dict[str, int]:
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (title, doc_type, district, content, source_name, source_url, now),
+                )
+                docs_inserted += 1
+
+        for row in metro_impact_profiles():
+            existing = con.execute(
+                "SELECT 1 FROM metro_impact_profiles WHERE city = ? AND station_name = ? AND line_name = ? LIMIT 1",
+                (row["city"], row["station_name"], row["line_name"]),
+            ).fetchone()
+            if not existing:
+                con.execute(
+                    """
+                    INSERT INTO metro_impact_profiles (
+                        city, station_name, line_name, impact_band, uplift_low_pct, uplift_high_pct,
+                        distance_band, evidence_note, source_name, source_url, updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        row["city"],
+                        row["station_name"],
+                        row["line_name"],
+                        row["impact_band"],
+                        row["uplift_low_pct"],
+                        row["uplift_high_pct"],
+                        row["distance_band"],
+                        row["evidence_note"],
+                        row["source_name"],
+                        row["source_url"],
+                        now,
+                    ),
                 )
                 docs_inserted += 1
 
@@ -1209,6 +1431,7 @@ def etl_status() -> dict[str, Any]:
         tx_count = con.execute("SELECT COUNT(*) FROM fact_transactions").fetchone()[0]
         zone_count = con.execute("SELECT COUNT(*) FROM dim_planning_zone").fetchone()[0]
         doc_count = con.execute("SELECT COUNT(*) FROM legal_documents").fetchone()[0]
+        metro_count = con.execute("SELECT COUNT(*) FROM metro_impact_profiles").fetchone()[0]
         runs = con.execute(
             """
             SELECT * FROM etl_runs
@@ -1223,6 +1446,7 @@ def etl_status() -> dict[str, Any]:
         "transaction_records": int(tx_count),
         "planning_zones": int(zone_count),
         "legal_documents": int(doc_count),
+        "metro_impacts": int(metro_count),
         "sources": PUBLIC_SOURCES,
         "runs": [dict(row) for row in runs],
     }
@@ -2728,10 +2952,22 @@ def load_rag_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
     docs.extend(city_shortlist_documents(df))
     docs.extend(street_spotlight_documents(df))
     docs.extend(street_reference_documents())
+    docs.extend(
+        {
+            "title": title,
+            "content": content,
+            "source_name": source_name,
+            "source_url": source_url,
+            "district": district,
+            "city": infer_metro_city(title, source_name, source_url),
+        }
+        for title, doc_type, district, content, source_name, source_url in metro_documents()
+    )
     city_lookup = district_city_lookup()
     with connect_db() as con:
         legal_rows = con.execute("SELECT * FROM legal_documents").fetchall()
         zone_rows = con.execute("SELECT * FROM dim_planning_zone").fetchall()
+        metro_rows = con.execute("SELECT * FROM metro_impact_profiles").fetchall()
     for row in legal_rows:
         inferred_city = (
             city_lookup.get(row["district"])
@@ -2762,7 +2998,36 @@ def load_rag_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
                 "city": city_lookup.get(row["district"]) if row["district"] else None,
             }
         )
+    for row in metro_rows:
+        uplift_text = (
+            f"Ước tính giá bất động sản quanh ga tăng khoảng {float(row['uplift_low_pct']):.1f}-{float(row['uplift_high_pct']):.1f}% "
+            if row["uplift_low_pct"] is not None and row["uplift_high_pct"] is not None
+            else "Chưa có % uplift station-level được chốt trong nguồn công khai."
+        )
+        docs.append(
+            {
+                "title": f"Metro uplift - {row['station_name']} / {row['city']}",
+                "content": (
+                    f"{row['city']} - {row['station_name']} ({row['line_name']}): {row['distance_band']}. "
+                    f"{uplift_text} {row['evidence_note']}"
+                ),
+                "source_name": row["source_name"],
+                "source_url": row["source_url"],
+                "district": None,
+                "city": row["city"],
+            }
+        )
     return docs
+
+
+@app.get("/api/metro/impact")
+def metro_impact() -> dict[str, Any]:
+    seed_planning_and_documents()
+    with connect_db() as con:
+        rows = con.execute(
+            "SELECT * FROM metro_impact_profiles ORDER BY city, station_name"
+        ).fetchall()
+    return {"rows": [dict(row) for row in rows], "sources": PUBLIC_SOURCES}
 
 
 _rag_cache: dict[str, Any] = {}

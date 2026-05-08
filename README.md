@@ -1,142 +1,86 @@
 # PropertyVision BI
 
-PropertyVision BI is a full-stack real estate intelligence application for **Ho Chi Minh City** and **Hanoi**, built for business intelligence, price prediction, ROI analysis, planning-risk exploration, and executive-style decision support.
+PropertyVision BI is a decision-intelligence platform for real estate analysis in **Ho Chi Minh City** and **Hanoi**.
+It combines BI dashboards, market analytics, price prediction, what-if simulation, GIS/planning views, and a retrieval-first AI assistant for executive reporting.
 
-The project combines:
+## What You Get
 
-- a **FastAPI backend** for analytics, prediction, planning, and assistant endpoints
-- a **React + Vite frontend** for dashboards and interactive exploration
-- a **Hugging Face-hosted processed dataset** that can be pulled automatically on first backend run
+- Executive dashboard with market KPIs and trend views
+- Multi-dimensional slice-dice analysis
+- Price prediction and ROI simulation
+- Planning/GIS map with opportunity and risk views
+- RAG-based assistant grounded in market, planning, legal, and metro context
+- Export-friendly periodic report view for leadership updates
 
-## Highlights
-
-- Unified analytics across **Ho Chi Minh City** and **Hanoi**
-- Market KPIs, district comparison, and property-type breakdowns
-- Price prediction with machine learning
-- What-if simulation and future recommendation flows
-- GIS and planning-oriented views
-- Retrieval-first assistant with hosted Qwen text generation
-
-## Project Structure
-
-```text
-PropertyVision/
-├── backend/                    FastAPI application
-├── frontend/                   React + Vite frontend
-├── datasets/                   Local dataset workspace
-│   ├── README.md               Dataset card / dataset notes
-│   └── raw/                    Optional raw reference files
-├── data/                       SQLite files generated at runtime
-├── docs/                       Project documentation
-├── notebooks/                  Data exploration notebooks
-├── app.py                      Quick run note
-├── README.md
-└── requirements.txt
-```
-
-## Architecture Diagram
+## Architecture
 
 ```mermaid
 flowchart LR
-    user["User / Demo Presenter"] --> ui["React + Vite Frontend"]
-    ui --> api["FastAPI Backend"]
+    U[User] --> F[React + Vite Frontend]
+    F --> B[FastAPI Backend]
 
-    hfdata["Hugging Face Dataset<br/>SpringWang08/hanoi-hcmc-real-estate"] --> localcsv["datasets/clean_dataset.csv"]
-    localcsv --> mart["Data Mart<br/>Pandas + SQLite runtime tables"]
-    mart --> api
+    HF[Hugging Face Dataset<br/>SpringWang08/hanoi-hcmc-real-estate] --> D[datasets/clean_dataset.csv]
+    D --> M[Runtime Data Mart<br/>SQLite + Pandas]
+    M --> B
 
-    api --> analytics["Market Analytics<br/>KPI, trend, slice-dice"]
-    api --> ml["Prediction Model<br/>Random Forest price estimate"]
-    api --> sim["Decision Simulation<br/>what-if, ROI, payback"]
-    api --> gis["Planning / GIS Layer<br/>district risk and map data"]
-    api --> rag["RAG Retriever<br/>market, legal, planning context"]
-    rag --> qwen["Hosted Qwen2.5-1.5B-Instruct"]
-    qwen --> stream["Streaming AI Response"]
+    B --> A[Analytics / Prediction / Simulation]
+    B --> G[GIS / Planning / Metro impact]
+    B --> R[RAG Retriever]
+    R --> Q[Hosted Qwen]
+    Q --> O[Executive response]
 
-    analytics --> ui
-    ml --> ui
-    sim --> ui
-    gis --> ui
-    stream --> ui
+    A --> F
+    G --> F
+    O --> F
 ```
 
-## Data And AI Flow
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant B as FastAPI
-    participant D as Dataset / SQLite
-    participant R as RAG Retriever
-    participant Q as Hosted Qwen
-
-    U->>F: Open dashboard or run simulation
-    F->>B: Request analytics / what-if / assistant
-    B->>D: Load filtered market data
-    D-->>B: Return normalized records
-    B->>B: Compute KPI, prediction, ROI, scenarios
-    B->>R: Retrieve legal, planning, market context
-    R-->>B: Return ranked sources
-    B->>Q: Send prompt with retrieved context
-    Q-->>B: Stream generated Vietnamese analysis
-    B-->>F: Stream status, result, sources, recommendation
-    F-->>U: Render charts, cards, map, and AI explanation
-```
-
-More detailed diagrams are available in [Project Diagrams](docs/PROJECT_DIAGRAMS.md).
-
-## Dataset Behavior
-
-The application is configured so that **cloning the repository is enough to get started**.
-
-When the backend starts:
-
-1. it tries to download `clean_dataset.csv` from Hugging Face
-2. it stores the file locally at:
+## Repository Layout
 
 ```text
-datasets/clean_dataset.csv
+PropertyVision/
+├── backend/             FastAPI app, analytics, RAG, metro/planning data
+├── frontend/            React + Vite UI
+├── datasets/            Processed dataset, dataset notes, cached reference data
+├── docs/                Diagrams, baseline notes, demo scripts, UI spec
+├── data/                SQLite runtime artifacts
+├── README.md           Project overview and setup
+└── requirements.txt    Python dependencies
 ```
 
-3. if the download is unavailable but `datasets/clean_dataset.csv` already exists, it uses that local file
-4. if neither is available, it falls back to the raw reference CSV files in `datasets/raw/`
-5. when the AI assistant needs more granular street-level context, the backend can also build a cached supplementary street reference from `tinixai/vietnam-real-estates` into:
+## Data Model
 
-```text
-datasets/.cache/street_market_reference.csv
-```
+The application works with a processed dataset and runtime-generated analytical layers:
 
-Hugging Face dataset:
+- `datasets/clean_dataset.csv` is the main processed dataset
+- `data/*.db` is created at runtime for facts, planning zones, legal notes, and metro impact profiles
+- the backend also builds a cached street-level reference for richer RAG answers
+
+### Automatic dataset behavior
+
+On first backend start, the app will try to:
+
+1. download the processed dataset from Hugging Face
+2. store it locally as `datasets/clean_dataset.csv`
+3. fall back to the local file if it already exists
+4. fall back to raw reference data in `datasets/raw/` if needed
+
+This means a fresh clone can usually start without manual data copying.
+
+Dataset links:
 
 - https://huggingface.co/datasets/SpringWang08/hanoi-hcmc-real-estate
 - https://huggingface.co/datasets/tinixai/vietnam-real-estates
 
-The supplementary street-level source is used as a retrieval reference layer for richer AI recommendations. Please review and keep its original license terms when publishing or redistributing derivative outputs.
-
-This means a fresh clone can run without manually copying the processed dataset into the repo.
-
-## Data Quality Note
-
-The processed CSV is not a raw export. Before the backend serves it, the app applies a rule-based normalization pass so the dataset stays internally consistent and demo-ready:
-
-- `Bedrooms`, `Toilets`, and `Total Floors` are normalized by property type, area, and floor count
-- land-type records are forced to `0` bedrooms, `0` toilets, and `0` floors
-- Hanoi locations are aligned to real wards, communes, and townships within the correct districts
-- dates are constrained to a realistic analysis window so trend charts remain meaningful
-
-These rules are designed for BI exploration and portfolio demos, not as a claim of ground-truth property labels.
-
 ## Quick Start
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/QuangVoAI/PropertyVision.git
 cd PropertyVision
 ```
 
-### 2. Start the backend
+### 2. Set up the backend
 
 macOS / Linux:
 
@@ -156,13 +100,13 @@ pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-Backend:
+Backend URL:
 
 ```text
 http://localhost:8000
 ```
 
-### 3. Start the frontend
+### 3. Set up the frontend
 
 ```bash
 cd frontend
@@ -170,94 +114,141 @@ npm install
 npm run dev
 ```
 
-Frontend:
+Frontend URL:
 
 ```text
 http://localhost:5173
 ```
 
-## First-Run Experience
+## Environment Variables
 
-On the first backend run, the app may spend a short moment downloading the processed dataset from Hugging Face into `datasets/clean_dataset.csv`.
+The app works in retrieval-only mode without a hosted LLM token, but you can enable hosted generation for richer analysis.
 
-If you open the AI assistant and ask for detailed recommendations by ward or street, the backend may also take an extra moment on the first run to build the street-level cache for Hanoi and Ho Chi Minh City.
-
-After that:
-
-- the file remains available locally
-- subsequent backend runs reuse the downloaded file
-- the street-level cache in `datasets/.cache/` is reused for later AI requests
-- the repository stays clean because the downloaded dataset file is ignored by Git
-
-## AI / RAG Mode
-
-PropertyVision uses a retrieval-first AI flow:
-
-- RAG retrieves relevant market, planning, and legal context from the local knowledge base
-- the knowledge base now includes ward-level and supplementary street-level market notes for Hanoi and Ho Chi Minh City
-- Qwen2.5-1.5B-Instruct is used as a hosted language layer to rewrite those retrieved facts into smoother executive-style analysis
-- if the hosted model is unavailable or times out, the app surfaces a clear AI error state so the demo does not silently change behavior
-
-### Default Mode
-
-The backend runs in hosted-Qwen mode by default, with a short timeout. This is enough for demo and portfolio use when you have internet access and a valid Hugging Face token.
-
-### Hosted Qwen Setup
-
-Set your Hugging Face token and, if needed, override the model or provider:
-
-macOS / Linux:
+Recommended variables:
 
 ```bash
-export HF_TOKEN=your_hugging_face_token
-export PROPERTYVISION_HF_QWEN_MODEL=Qwen/Qwen2.5-1.5B-Instruct
-export PROPERTYVISION_HF_INFERENCE_PROVIDER=auto
-uvicorn backend.main:app --reload
+HF_TOKEN=your_hugging_face_token
+PROPERTYVISION_HF_QWEN_MODEL=Qwen/Qwen2.5-1.5B-Instruct
+PROPERTYVISION_HF_INFERENCE_PROVIDER=auto
+PROPERTYVISION_USE_HOSTED_QWEN=true
 ```
 
-Windows PowerShell:
+Optional `.env` file at the project root is supported.
 
-```powershell
-$env:HF_TOKEN="your_hugging_face_token"
-$env:PROPERTYVISION_HF_QWEN_MODEL="Qwen/Qwen2.5-1.5B-Instruct"
-$env:PROPERTYVISION_HF_INFERENCE_PROVIDER="auto"
-uvicorn backend.main:app --reload
+### Notes
+
+- If no hosted model is available, the app still runs with retrieval-backed analysis.
+- If you want faster local debugging with less AI overhead, keep the hosted model disabled.
+
+## Core Features
+
+### 1. Tổng quan điều hành
+
+- KPI trọng yếu
+- xu hướng điều hành dài hạn
+- kiểm tra giả định tăng trưởng
+- khuyến nghị dành cho ban điều hành
+
+### 2. Thông tin thị trường
+
+- so sánh khu vực
+- mặt bằng giá
+- phân tích phân khúc
+- insight theo thành phố / quận / loại tài sản
+
+### 3. Phân tích đa chiều
+
+- slice-dice theo khu vực và phân khúc
+- bảng phân đoạn tiềm năng cao
+- xem danh sách địa chỉ theo từng record
+
+### 4. Mô phỏng đầu tư
+
+- giá trị tương lai
+- lợi nhuận vốn
+- ROI tích lũy
+- thời gian hoàn vốn
+- khuyến nghị mua thêm / giữ / bán bớt
+
+### 5. Bản đồ quy hoạch
+
+- opportunity score
+- risk level
+- bộ lọc theo ROI, score và rủi ro
+- dữ liệu quy hoạch, legal, và metro impact
+
+### 6. Trợ lý phân tích
+
+- hỏi đáp theo ngữ cảnh RAG
+- nguồn trích dẫn rõ ràng
+- khuyến nghị ngắn gọn theo giọng điều hành
+
+### 7. Báo cáo định kỳ
+
+- bản tóm tắt kiểu executive report
+- hỗ trợ in ra PDF từ trình duyệt
+
+## Metro Impact Data
+
+The backend now includes a dedicated metro-impact layer for real estate analysis:
+
+- Ho Chi Minh City metro line 1
+- Ben Thanh central station
+- Tham Luong station / metro line 2 gateway
+- Hanoi TOD and urban rail corridor references
+
+This layer is available through the RAG pipeline and the data-ops view so the assistant can answer questions like:
+
+- “Metro ảnh hưởng giá nhà như thế nào?”
+- “Bến Thành và Tham Lương tác động ra sao?”
+- “Hà Nội và TP.HCM khác nhau thế nào quanh ga metro?”
+
+There is also an API endpoint:
+
+```text
+GET /api/metro/impact
 ```
 
-You can also place the same variables in a local `.env` file at the project root. The backend reads `.env` automatically on startup.
+## Refreshing Data
 
-If you want to disable hosted generation and keep the app in retrieval-only analysis mode for debugging, set:
+If you change planning, legal, metro, or market sources, refresh the runtime layers:
 
-```bash
-export PROPERTYVISION_USE_HOSTED_QWEN=false
-```
-
-If the hosted model does not respond in time, the UI will show a clear error state instead of silently switching to a different language layer.
-
-### Refresh RAG Index
-
-If you update planning, legal, or analytical sources and want the AI layer to rebuild its retrieval index, call:
-
-```bash
+```text
+POST /api/etl/run
 POST /api/rag/reindex
 ```
 
-In the UI, this is exposed through the data operations page.
+You can also use the **Theo dõi dữ liệu** page in the UI to do this.
 
-## Key Files
+## Useful Backend Endpoints
 
-- `backend/main.py`: primary backend entrypoint
-- `frontend/src/main.jsx`: main frontend app
-- `datasets/README.md`: local dataset card and dataset notes
-- `docs/BASELINE.md`: technical baseline
-- `docs/DEMO_SCRIPT.md`: guided demo flow
-- `docs/PRESENTATION_OUTLINE.md`: presentation structure
-- `docs/UI_DESIGN_SPEC.md`: UI design reference
+- `GET /api/metadata`
+- `POST /api/analytics`
+- `POST /api/slice-dice`
+- `POST /api/predict`
+- `POST /api/what-if`
+- `GET /api/map/districts`
+- `GET /api/planning/zones`
+- `GET /api/metro/impact`
+- `POST /api/rag/reindex`
+- `GET /api/etl/status`
+- `GET /api/ai/status`
+
+## Notes For Contributors
+
+- The repository is designed so that a new clone can run end-to-end with minimal manual setup.
+- Avoid committing generated runtime files from `data/` and downloaded dataset artifacts unless intentional.
+- If you update the dataset or knowledge base, reindex RAG so the assistant reflects the latest state.
 
 ## Documentation
 
 - [Project Diagrams](docs/PROJECT_DIAGRAMS.md)
 - [Technical Baseline](docs/BASELINE.md)
 - [Demo Script](docs/DEMO_SCRIPT.md)
-- [Presentation Outline](docs/PRESENTATION_OUTLINE.md)
 - [UI Design Spec](docs/UI_DESIGN_SPEC.md)
+
+## License / Data Use
+
+This project aggregates public, processed, and derivative analytical data for BI and demonstration purposes.
+Please review the source terms of any upstream data before redistribution or commercial use.
+
