@@ -7,3 +7,4 @@ pydantic>=2.0
 requests>=2.31
 sentence-transformers>=2.7
 huggingface_hub>=0.31
+python-dotenv>=1.0
