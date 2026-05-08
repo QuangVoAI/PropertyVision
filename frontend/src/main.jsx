@@ -830,6 +830,39 @@ function buildReportQuestion(analytics, filters) {
   return `Viết ghi chú điều hành ngắn gọn cho báo cáo định kỳ của ${city}. Nhấn mạnh ${best}, ROI trung bình ${pct(analytics?.kpis?.avg_roi)}, các khu vực cần theo dõi gồm ${risky.join(", ") || "chưa có cảnh báo rõ"}. Nêu rõ lợi thế, rủi ro và hành động ưu tiên theo giọng điệu chuyên viên phân tích đầu tư.`;
 }
 
+function buildReportCoverSummary(analytics, whatIf) {
+  const kpis = analytics?.kpis || {};
+  const executiveTrend = buildExecutiveTrend(analytics?.timeline || [], 8);
+  const baseline = executiveTrend[0] || null;
+  const latest = executiveTrend[executiveTrend.length - 1] || null;
+  const bestDistrict = kpis.best_district || analytics?.districts?.[0]?.district || "Khu vực dẫn đầu";
+
+  const projectedFutureValue = whatIf?.summary?.future_value ?? (latest?.price_billion ? latest.price_billion * 1_000_000_000 : null);
+  const projectedCumulativeRoi = whatIf?.summary?.cumulative_roi_pct ?? (
+    baseline && latest && Number(baseline.price_billion) > 0
+      ? ((Number(latest.price_billion) / Number(baseline.price_billion)) - 1) * 100
+      : null
+  );
+
+  const projectedPaybackYears = whatIf?.summary?.payback_years ?? (() => {
+    const roiFromKpis = Number(kpis.avg_roi);
+    if (Number.isFinite(roiFromKpis) && roiFromKpis > 0) return 100 / roiFromKpis;
+    const roiFromTrend = Number(latest?.roi_pct);
+    if (Number.isFinite(roiFromTrend) && roiFromTrend > 0) return 100 / roiFromTrend;
+    return null;
+  })();
+
+  const sourceLabel = whatIf ? "Từ mô phỏng đầu tư" : "Ước tính theo xu hướng điều hành";
+
+  return {
+    bestDistrict,
+    projectedFutureValue,
+    projectedCumulativeRoi,
+    projectedPaybackYears,
+    sourceLabel
+  };
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -2136,6 +2169,7 @@ function ExplorerPage({ analytics }) {
 function ReportPage({ analytics, whatIf, reportNote, reportNoteLoading }) {
   const kpis = analytics?.kpis || {};
   const reportBriefs = useMemo(() => buildExecutiveBriefs(analytics?.districts || []), [analytics?.districts]);
+  const coverSummary = useMemo(() => buildReportCoverSummary(analytics || {}, whatIf), [analytics, whatIf]);
   const reportStage = aiStageInfo(reportNote?.status || reportNote?.mode, reportNoteLoading);
   const exportTimestamp = analytics?.kpis?.last_data_refresh ? formatDateTime(analytics.kpis.last_data_refresh) : formatDateTime(new Date().toISOString());
 
@@ -2167,19 +2201,19 @@ function ReportPage({ analytics, whatIf, reportNote, reportNoteLoading }) {
         <div className="report-cover-stats">
           <article>
             <span>Khu dẫn đầu</span>
-            <strong>{kpis.best_district || "N/A"}</strong>
+            <strong>{coverSummary.bestDistrict}</strong>
           </article>
           <article>
             <span>Giá trị tương lai</span>
-            <strong>{whatIf ? money(whatIf.summary.future_value) : "N/A"}</strong>
+            <strong>{coverSummary.projectedFutureValue ? money(coverSummary.projectedFutureValue) : "Chưa mô phỏng"}</strong>
           </article>
           <article>
             <span>ROI tích lũy</span>
-            <strong>{whatIf ? pct(whatIf.summary.cumulative_roi_pct) : "N/A"}</strong>
+            <strong>{coverSummary.projectedCumulativeRoi !== null ? pct(coverSummary.projectedCumulativeRoi) : "Chưa mô phỏng"}</strong>
           </article>
           <article>
             <span>Hoàn vốn</span>
-            <strong>{whatIf?.summary?.payback_years ? `${whatIf.summary.payback_years.toFixed(1)} năm` : "N/A"}</strong>
+            <strong>{coverSummary.projectedPaybackYears ? `${coverSummary.projectedPaybackYears.toFixed(1)} năm` : "Chưa mô phỏng"}</strong>
           </article>
         </div>
       </section>
