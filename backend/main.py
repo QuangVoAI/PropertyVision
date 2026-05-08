@@ -68,6 +68,7 @@ DEFAULT_CITY = "TP Hồ Chí Minh"
 CITY_LABELS = ["TP Hồ Chí Minh", "Hà Nội"]
 LAND_TYPES = {"Đất thổ cư", "Đất dự án, Khu dân cư", "Đất nông nghiệp, kho bãi"}
 STREET_REFERENCE_CACHE_PATH = DATASETS_DIR / ".cache" / "street_market_reference.csv"
+HOUSE_ADDRESS_CACHE_PATH = DATASETS_DIR / ".cache" / "house_address_reference.csv"
 STREET_REFERENCE_SOURCE_DIR = DATASETS_DIR / ".cache" / "tinixai_vietnam_real_estates"
 STREET_REFERENCE_MIN_LISTINGS = int(os.getenv("PROPERTYVISION_STREET_REFERENCE_MIN_LISTINGS", "3"))
 STREET_REFERENCE_MAX_DOCS_PER_DISTRICT = int(os.getenv("PROPERTYVISION_STREET_REFERENCE_MAX_DOCS_PER_DISTRICT", "10"))
@@ -247,10 +248,19 @@ def clean_value(value: Any) -> Any:
         if math.isnan(float(value)) or math.isinf(float(value)):
             return None
         return float(value)
+    if isinstance(value, np.ndarray):
+        return [clean_value(item) for item in value.tolist()]
+    if isinstance(value, (list, tuple, set)):
+        return [clean_value(item) for item in list(value)]
+    if isinstance(value, dict):
+        return {key: clean_value(item) for key, item in value.items()}
     if isinstance(value, pd.Timestamp):
         return value.strftime("%Y-%m-%d")
-    if pd.isna(value):
-        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        return value
     return value
 
 
@@ -281,6 +291,10 @@ def normalize_text(value: str) -> str:
     text = str(value).replace("đ", "d").replace("Đ", "D")
     ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii").lower()
     return re.sub(r"\s+", " ", ascii_text).strip()
+
+
+def normalize_whitespace(value: str) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip())
 
 
 def extract_district_mentions(question: str, districts: list[str]) -> list[str]:
@@ -745,6 +759,134 @@ def load_street_reference() -> pd.DataFrame:
         except Exception:
             pass
     return build_street_reference_cache()
+
+
+def extract_house_number(text: str, street_name: str = "") -> str | None:
+    combined = normalize_whitespace(f"{text or ''} {street_name or ''}")
+    if not combined:
+        return None
+
+    patterns = []
+    if street_name:
+        escaped_street = re.escape(normalize_whitespace(street_name))
+        patterns.append(re.compile(rf"(?i)\b([0-9]{{1,4}}[A-Za-z]?(?:/[0-9]{{1,4}}[A-Za-z]?)*(?:-[0-9A-Za-z]+)?)\s+{escaped_street}\b"))
+    patterns.extend(
+        [
+            re.compile(r"(?i)\b(?:số|so|nhà số|địa chỉ|hẻm số|ngõ số|kiệt số)\s*([0-9]{1,4}[A-Za-z]?(?:/[0-9]{1,4}[A-Za-z]?)*(?:-[0-9A-Za-z]+)?)"),
+            re.compile(r"(?i)\b(?:đường số|phố số|hẻm số|ngõ số|kiệt số)\s*([0-9]{1,4}[A-Za-z]?)"),
+        ]
+    )
+    for pattern in patterns:
+        match = pattern.search(combined)
+        if match:
+            candidate = match.group(1).strip()
+            if candidate:
+                return candidate
+    return None
+
+
+def format_detailed_address(house_number: str | None, street_name: str, ward_name: str, district_display: str) -> str:
+    parts = []
+    if house_number:
+        parts.append(str(house_number).strip())
+    if street_name:
+        parts.append(str(street_name).strip())
+    line = " ".join(part for part in parts if part)
+    tail = [part for part in [ward_name, district_display] if part]
+    if line and tail:
+        return f"{line}, {', '.join(tail)}"
+    if tail:
+        return ", ".join(tail)
+    return line
+
+
+def build_house_address_cache() -> pd.DataFrame:
+    HOUSE_ADDRESS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    parquet_files = sorted(
+        filename
+        for filename in list_repo_files(repo_id=HF_STREET_DATASET_REPO, repo_type="dataset")
+        if filename.endswith(".parquet")
+    )
+    if not parquet_files:
+        raise FileNotFoundError("No parquet shards found in street-level dataset source.")
+
+    frames: list[pd.DataFrame] = []
+    for filename in parquet_files:
+        local_path = hf_hub_download(
+            repo_id=HF_STREET_DATASET_REPO,
+            repo_type="dataset",
+            filename=filename,
+            local_dir=STREET_REFERENCE_SOURCE_DIR,
+        )
+        shard = pd.read_parquet(
+            local_path,
+            columns=[
+                "province_name",
+                "district_name",
+                "ward_name",
+                "street_name",
+                "name",
+                "description",
+                "property_type_name",
+            ],
+        )
+        shard = shard[shard["province_name"].isin(["Hà Nội", "Hồ Chí Minh"])].copy()
+        if shard.empty:
+            continue
+        frames.append(shard)
+
+    if not frames:
+        raise ValueError("House address source returned no Hanoi/HCMC rows.")
+
+    raw = pd.concat(frames, ignore_index=True)
+    raw["ward_name"] = raw["ward_name"].fillna("").astype(str).str.strip()
+    raw["street_name"] = raw["street_name"].fillna("").astype(str).str.strip()
+    raw["district_name"] = raw["district_name"].fillna("").astype(str).str.strip()
+    raw["name"] = raw["name"].fillna("").astype(str).str.strip()
+    raw["description"] = raw["description"].fillna("").astype(str).str.strip()
+    raw["property_type_name"] = raw["property_type_name"].fillna("").astype(str).str.strip()
+    raw["city"] = raw["province_name"].map(normalize_external_city)
+    raw["district_display"] = [
+        fallback_external_district_display(str(city), str(district))
+        for city, district in zip(raw["city"], raw["district_name"])
+    ]
+    raw["house_number"] = [
+        extract_house_number(str(name) + " " + str(description), str(street_name))
+        for name, description, street_name in zip(raw["name"], raw["description"], raw["street_name"])
+    ]
+    raw = raw[raw["street_name"].ne("") | raw["house_number"].notna()].copy()
+    raw["address_display"] = [
+        format_detailed_address(house_number, street_name, ward_name, district_display)
+        for house_number, street_name, ward_name, district_display in zip(
+            raw["house_number"],
+            raw["street_name"],
+            raw["ward_name"],
+            raw["district_display"],
+        )
+    ]
+    raw = raw[raw["address_display"].ne("")].copy()
+
+    aggregated = (
+        raw.groupby(["city", "district_display", "ward_name", "street_name", "house_number", "address_display", "property_type_name"], dropna=False)
+        .agg(listings=("address_display", "count"))
+        .reset_index()
+    )
+    aggregated = aggregated.sort_values(["city", "district_display", "listings"], ascending=[True, True, False])
+    aggregated.to_csv(HOUSE_ADDRESS_CACHE_PATH, index=False)
+    return aggregated
+
+
+@lru_cache(maxsize=1)
+def load_house_address_reference() -> pd.DataFrame:
+    if HOUSE_ADDRESS_CACHE_PATH.exists():
+        try:
+            cached = pd.read_csv(HOUSE_ADDRESS_CACHE_PATH)
+            required_columns = {"city", "district_display", "ward_name", "street_name", "house_number", "address_display", "property_type_name", "listings"}
+            if not cached.empty and required_columns.issubset(cached.columns):
+                return cached
+        except Exception:
+            pass
+    return build_house_address_cache()
 
 
 def ensure_operational_tables() -> None:
@@ -1421,6 +1563,219 @@ def aggregate_slice(df: pd.DataFrame, dimensions: list[str]) -> pd.DataFrame:
     return grouped
 
 
+def segment_address_summary(df: pd.DataFrame, dimensions: list[str], limit: int = 20) -> pd.DataFrame:
+    if not dimensions or "Location" not in df.columns:
+        return pd.DataFrame(columns=[*dimensions, "addresses", "address_count"])
+
+    scoped = df[dimensions + ["Location"]].copy()
+    scoped["Location"] = scoped["Location"].astype(str).str.strip()
+    scoped = scoped[scoped["Location"].ne("") & scoped["Location"].str.lower().ne("nan")]
+
+    if scoped.empty:
+        return pd.DataFrame(columns=[*dimensions, "addresses", "address_count"])
+
+    def unique_locations(values: list[Any], max_items: int | None = None) -> list[str]:
+        seen: set[str] = set()
+        items: list[str] = []
+        for raw_value in values:
+            if pd.isna(raw_value):
+                continue
+            value = str(raw_value).strip()
+            if not value or value.lower() == "nan" or value in seen:
+                continue
+            seen.add(value)
+            items.append(value)
+        return items if max_items is None else items[:max_items]
+
+    grouped_count = (
+        scoped.groupby(dimensions, dropna=False)["Location"]
+        .agg(lambda series: unique_locations(series.tolist(), None))
+        .reset_index(name="_all_addresses")
+    )
+    grouped = (
+        scoped.groupby(dimensions, dropna=False)["Location"]
+        .agg(lambda series: unique_locations(series.tolist()))
+        .reset_index(name="addresses")
+    )
+    grouped = grouped.merge(grouped_count, on=dimensions, how="left")
+    grouped["address_count"] = grouped["_all_addresses"].apply(lambda value: len(value) if isinstance(value, list) else 0)
+    grouped = grouped.drop(columns=["_all_addresses"])
+    return grouped
+
+
+def segment_location_summary(
+    df: pd.DataFrame,
+    row_dimension: str,
+    column_dimension: str,
+    row_value: Any,
+    column_value: Any,
+    limit: int = 80,
+) -> list[dict[str, Any]]:
+    if "Location" not in df.columns:
+        return []
+
+    scoped = df.copy()
+
+    if row_dimension in scoped.columns and row_value is not None:
+        scoped = scoped[scoped[row_dimension].astype(str).map(normalize_text).eq(normalize_text(row_value))]
+    if column_dimension in scoped.columns and column_value is not None:
+        scoped = scoped[scoped[column_dimension].astype(str).map(normalize_text).eq(normalize_text(column_value))]
+
+    if scoped.empty:
+        return []
+
+    scoped = scoped.copy()
+    scoped["Location"] = scoped["Location"].astype(str).str.strip()
+    scoped = scoped[scoped["Location"].ne("") & scoped["Location"].str.lower().ne("nan")]
+    if scoped.empty:
+        return []
+
+    grouped = (
+        scoped.groupby("Location", dropna=False)
+        .agg(listings=("Location", "count"))
+        .reset_index()
+        .sort_values(["listings", "Location"], ascending=[False, True])
+        .head(limit)
+    )
+
+    row_district = str(row_value or "").strip() if row_dimension == "district" else ""
+    row_type = str(row_value or "").strip() if row_dimension == "Type of House" else ""
+    col_district = str(column_value or "").strip() if column_dimension == "district" else ""
+    col_type = str(column_value or "").strip() if column_dimension == "Type of House" else ""
+
+    district_display = row_district or col_district or ""
+    property_type_name = row_type or col_type or ""
+
+    result: list[dict[str, Any]] = []
+    for row in grouped.itertuples(index=False):
+        location_text = str(row.Location).strip()
+        ward_name = location_text.split(",")[0].strip() if "," in location_text else ""
+        result.append(
+            {
+                "house_number": "",
+                "street_name": "",
+                "ward_name": ward_name,
+                "district_display": district_display,
+                "property_type_name": property_type_name,
+                "address_display": location_text,
+                "listings": int(row.listings),
+                "has_house_number": False,
+            }
+        )
+    return result
+
+
+def segment_record_location_entries(
+    df: pd.DataFrame,
+    row_dimension: str,
+    column_dimension: str,
+    row_value: Any,
+    column_value: Any,
+    limit: int = 400,
+) -> list[dict[str, Any]]:
+    if "Location" not in df.columns:
+        return []
+
+    scoped = df.copy()
+    if row_dimension in scoped.columns and row_value is not None:
+        scoped = scoped[scoped[row_dimension].astype(str).map(normalize_text).eq(normalize_text(row_value))]
+    if column_dimension in scoped.columns and column_value is not None:
+        scoped = scoped[scoped[column_dimension].astype(str).map(normalize_text).eq(normalize_text(column_value))]
+
+    if scoped.empty:
+        return []
+
+    scoped = scoped.copy()
+    scoped["Location"] = scoped["Location"].astype(str).str.strip()
+    scoped = scoped[scoped["Location"].ne("") & scoped["Location"].str.lower().ne("nan")]
+    if scoped.empty:
+        return []
+
+    row_district = str(row_value or "").strip() if row_dimension == "district" else ""
+    row_type = str(row_value or "").strip() if row_dimension == "Type of House" else ""
+    col_district = str(column_value or "").strip() if column_dimension == "district" else ""
+    col_type = str(column_value or "").strip() if column_dimension == "Type of House" else ""
+    district_display = row_district or col_district or ""
+    property_type_name = row_type or col_type or ""
+
+    entries: list[dict[str, Any]] = []
+    for row in scoped.head(limit).itertuples(index=False):
+        location_text = str(row.Location).strip()
+        ward_name = location_text.split(",")[0].strip() if "," in location_text else ""
+        entries.append(
+            {
+                "house_number": "",
+                "street_name": "",
+                "ward_name": ward_name,
+                "district_display": district_display,
+                "property_type_name": property_type_name,
+                "address_display": location_text,
+                "listings": 1,
+                "has_house_number": False,
+            }
+        )
+    return entries
+
+
+def segment_house_address_summary(
+    filters: Filters,
+    row_dimension: str,
+    column_dimension: str,
+    row_value: Any,
+    column_value: Any,
+    limit: int = 40,
+) -> list[dict[str, Any]]:
+    reference = load_house_address_reference()
+    if reference.empty:
+        return []
+
+    scoped = reference.copy()
+    if filters.city and "city" in scoped.columns:
+        scoped = scoped[scoped["city"].astype(str).eq(filters.city)]
+
+    district_value = None
+    property_type_value = None
+    if row_dimension == "district":
+        district_value = str(row_value or "").strip()
+    elif column_dimension == "district":
+        district_value = str(column_value or "").strip()
+
+    if row_dimension == "Type of House":
+        property_type_value = str(row_value or "").strip()
+    elif column_dimension == "Type of House":
+        property_type_value = str(column_value or "").strip()
+
+    if district_value:
+        district_display_value = str(district_value).strip()
+        district_key_value = normalize_text(district_display_value)
+        scoped = scoped[
+            scoped["district_display"].astype(str).eq(district_display_value)
+            | scoped["district_display"].astype(str).map(normalize_text).eq(district_key_value)
+        ]
+
+    if property_type_value and "property_type_name" in scoped.columns:
+        scoped = scoped[scoped["property_type_name"].astype(str).eq(property_type_value)]
+
+    if scoped.empty:
+        return []
+
+    scoped["has_house_number"] = scoped["house_number"].notna() & scoped["house_number"].astype(str).str.strip().ne("")
+    scoped = scoped.sort_values(["has_house_number", "listings", "address_display"], ascending=[False, False, True]).head(limit)
+    return [
+        {
+            "house_number": clean_value(row.house_number),
+            "street_name": clean_value(row.street_name),
+            "ward_name": clean_value(row.ward_name),
+            "district_display": clean_value(row.district_display),
+            "property_type_name": clean_value(row.property_type_name),
+            "address_display": clean_value(row.address_display),
+            "listings": clean_value(row.listings),
+            "has_house_number": clean_value(row.has_house_number),
+        }
+        for row in scoped.itertuples(index=False)
+    ]
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -1566,6 +1921,42 @@ def slice_dice(payload: SliceDiceRequest) -> dict[str, Any]:
     grouped = aggregate_slice(filtered, [row_dimension, column_dimension])
     row_grouped = aggregate_slice(filtered, [row_dimension]).sort_values(metric, ascending=False)
     overall_grouped = aggregate_slice(overall, [row_dimension])
+    address_summary = segment_address_summary(filtered, [row_dimension, column_dimension])
+    top_segments = grouped.sort_values(metric, ascending=False).head(15)
+    if not address_summary.empty:
+        top_segments = top_segments.merge(address_summary, on=[row_dimension, column_dimension], how="left")
+    else:
+        top_segments["addresses"] = [[] for _ in range(len(top_segments))]
+        top_segments["address_count"] = 0
+    top_segments["addresses"] = top_segments["addresses"].apply(lambda value: value if isinstance(value, list) else [])
+    top_segments["address_count"] = top_segments["address_count"].fillna(0).astype(int)
+    top_segment_rows = top_segments.to_dict(orient="records")
+    for row in top_segment_rows:
+        listing_entries = segment_record_location_entries(
+            filtered,
+            row_dimension,
+            column_dimension,
+            row.get(row_dimension),
+            row.get(column_dimension),
+        )
+        house_entries = segment_house_address_summary(
+            payload.filters,
+            row_dimension,
+            column_dimension,
+            row.get(row_dimension),
+            row.get(column_dimension),
+        )
+        combined_entries: list[dict[str, Any]] = list(listing_entries)
+        seen_display = {normalize_text(entry.get("address_display") or "") for entry in listing_entries if entry.get("address_display")}
+        for entry in house_entries:
+            key = normalize_text(entry.get("address_display") or "")
+            if not key or key in seen_display:
+                continue
+            seen_display.add(key)
+            combined_entries.append(entry)
+        row["addresses"] = combined_entries[:400]
+        row["address_count"] = len(combined_entries)
+    top_segment_records = records(pd.DataFrame(top_segment_rows))
     matrix = grouped.pivot_table(index=row_dimension, columns=column_dimension, values=metric, aggfunc="mean").fillna(0)
     matrix_records = []
     for row_name, values in matrix.iterrows():
@@ -1597,7 +1988,7 @@ def slice_dice(payload: SliceDiceRequest) -> dict[str, Any]:
         "rows": records(row_grouped.head(20)),
         "matrix": matrix_records,
         "columns": [str(col) for col in matrix.columns.tolist()],
-        "top_segments": records(grouped.sort_values(metric, ascending=False).head(15)),
+        "top_segments": top_segment_records,
         "filter_context": {
             "active": active_filters or ["Toàn thị trường"],
             "filtered_records": int(len(filtered)),
@@ -1715,10 +2106,17 @@ def what_if(payload: WhatIfRequest) -> dict[str, Any]:
 
     result = {
         "input": {
+            "district": payload.district,
+            "property_type": payload.property_type,
+            "legal_documents": payload.legal_documents,
+            "area": float(payload.area),
+            "bedrooms": float(payload.bedrooms) if payload.bedrooms is not None else None,
+            "toilets": float(payload.toilets) if payload.toilets is not None else None,
+            "floors": float(payload.floors) if payload.floors is not None else None,
+            "roi_expected": payload.roi_expected,
             "budget_vnd": budget,
             "annual_growth_pct": growth,
             "years": years,
-            "roi_expected": payload.roi_expected,
         },
         "asset_prediction": predicted,
         "summary": {
@@ -1834,7 +2232,7 @@ def future_recommendation_stream(payload: FutureRecommendationRequest) -> Stream
                 "mode": "hf-qwen-future-recommendation",
                 "llm_available": llm_credentials_ready(),
                 "llm_mode": active_llm_mode(),
-                "status": llm_waiting_status() if llm_credentials_ready() else "error",
+                "status": llm_waiting_status(),
             },
             ensure_ascii=False,
         ) + "\n"
@@ -1843,7 +2241,7 @@ def future_recommendation_stream(payload: FutureRecommendationRequest) -> Stream
             yield json.dumps(
                 {
                     "type": "error",
-                    "detail": hosted_qwen_failure_detail(),
+                    "detail": f"{hosted_qwen_failure_detail()} Hệ thống sẽ chuyển sang retrieval mode.",
                 },
                 ensure_ascii=False,
             ) + "\n"
@@ -2040,7 +2438,9 @@ def map_districts(city: str | None = None) -> dict[str, Any]:
         df = df[df["city"] == selected_city]
     score_df = district_score(df)
     coords = district_coordinates()
-    zones = {row["district"]: row for row in planning_zones()["zones"]}
+    planning_payload = planning_zones()
+    zones = {row["district"]: row for row in planning_payload["zones"]}
+    city_zone_rows = [row for row in planning_payload["zones"] if row.get("district") in set(score_df["district"].tolist())]
     map_rows: list[dict[str, Any]] = []
     for row in score_df.itertuples(index=False):
         coord = coords.get(district_key(row.district))
@@ -2073,6 +2473,7 @@ def map_districts(city: str | None = None) -> dict[str, Any]:
         "city": selected_city,
         "center": CITY_CENTERS.get(selected_city, CITY_CENTERS[DEFAULT_CITY]),
         "districts": map_rows,
+        "planning_zones": city_zone_rows,
         "sources": PUBLIC_SOURCES,
     }
 
@@ -2585,7 +2986,7 @@ def llm_waiting_status() -> str:
         return "waiting_featherless"
     if mode == "hf-hosted":
         return "waiting_huggingface"
-    return "error"
+    return "ready"
 
 
 def llm_credentials_ready() -> bool:
@@ -2790,9 +3191,9 @@ async def warmup_hosted_qwen() -> None:
         return
     if not llm_credentials_ready():
         detail = hosted_qwen_failure_detail()
-        set_ai_runtime_state("error", detail, "Error")
-        set_ai_task_state("assistant", "error", detail, "Error")
-        set_ai_task_state("decision", "error", detail, "Error")
+        set_ai_runtime_state("ready", f"{detail} Hệ thống đang dùng retrieval mode.", "Ready")
+        set_ai_task_state("assistant", "ready", "Chưa cấu hình hosted model, đang dùng retrieval mode.", "Ready")
+        set_ai_task_state("decision", "ready", "Chưa cấu hình hosted model, đang dùng retrieval mode.", "Ready")
         return
 
     set_ai_runtime_state("loading", f"Đang gọi {llm_provider_label()} ngầm để làm nóng model...", "Model loading")
@@ -2855,11 +3256,13 @@ async def warmup_hosted_qwen() -> None:
         if assistant_answer and decision_answer:
             set_ai_runtime_state("ready", f"{llm_provider_label()} đã sẵn sàng phục vụ cả assistant và decision.", "Ready")
         else:
-            set_ai_runtime_state("error", hosted_qwen_failure_detail(), "Error")
+            set_ai_runtime_state("ready", f"{hosted_qwen_failure_detail()} Hệ thống sẽ tiếp tục ở retrieval mode.", "Ready")
+            set_ai_task_state("assistant", "ready", "Retrieval mode vẫn sẵn sàng phục vụ assistant.", "Ready")
+            set_ai_task_state("decision", "ready", "Retrieval mode vẫn sẵn sàng phục vụ decision.", "Ready")
     except Exception as exc:
-        set_ai_runtime_state("error", f"Warm up thất bại: {exc}", "Error")
-        set_ai_task_state("assistant", "error", f"Warm up thất bại: {exc}", "Error")
-        set_ai_task_state("decision", "error", f"Warm up thất bại: {exc}", "Error")
+        set_ai_runtime_state("ready", f"Warm up thất bại: {exc}. Hệ thống sẽ dùng retrieval mode.", "Ready")
+        set_ai_task_state("assistant", "ready", "Warm up thất bại, đang dùng retrieval mode.", "Ready")
+        set_ai_task_state("decision", "ready", "Warm up thất bại, đang dùng retrieval mode.", "Ready")
 
 
 async def warmup_prediction_runtime() -> None:

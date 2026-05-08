@@ -27,6 +27,7 @@ import "./styles.css";
 const API_URL = import.meta.env.VITE_API_URL || "";
 const PALETTE = ["#2563eb", "#0f766e", "#7c3aed", "#d97706", "#c2410c", "#0891b2", "#4f46e5"];
 const DEFAULT_MODEL_LABEL = "AI provider";
+const APP_VERSION = "2.0.0";
 const DECISION_BASE_YEAR = 2025;
 const DECISION_MAX_YEAR = 2050;
 
@@ -43,16 +44,48 @@ const emptyFilters = {
 };
 
 const pages = [
-  { id: "overview", path: "/overview", label: "Tổng quan điều hành", short: "Tổng quan", icon: "dashboard" },
-  { id: "market", path: "/market", label: "Thông tin thị trường", short: "Thị trường", icon: "query_stats" },
-  { id: "slice", path: "/slice-dice", label: "Phân tích đa chiều", short: "Đa chiều", icon: "analytics" },
-  { id: "decision", path: "/decision-lab", label: "Mô phỏng đầu tư", short: "Mô phỏng", icon: "science" },
-  { id: "gis", path: "/gis-planning", label: "Bản đồ quy hoạch", short: "Bản đồ", icon: "map" },
-  { id: "ai", path: "/ai-analyst", label: "Trợ lý phân tích", short: "Trợ lý", icon: "psychology" },
-  { id: "ops", path: "/data-ops", label: "Theo dõi dữ liệu", short: "Dữ liệu", icon: "settings_input_component" },
-  { id: "explorer", path: "/explorer", label: "Chi tiết tài sản", short: "Tài sản", icon: "explore" },
-  { id: "report", path: "/periodic-report", label: "Báo cáo định kỳ", short: "Báo cáo", icon: "summarize" }
+  { id: "overview", path: "/overview", label: "Tổng quan điều hành", short: "Tổng quan", icon: "dashboard", description: "KPI trọng yếu và xu hướng danh mục." },
+  { id: "market", path: "/market", label: "Thông tin thị trường", short: "Thị trường", icon: "query_stats", description: "So sánh thị trường và mặt bằng giá." },
+  { id: "slice", path: "/slice-dice", label: "Phân tích đa chiều", short: "Đa chiều", icon: "analytics", description: "Phân tích theo nhiều chiều dữ liệu." },
+  { id: "decision", path: "/decision-lab", label: "Mô phỏng đầu tư", short: "Mô phỏng", icon: "science", description: "Mô phỏng ROI và hoàn vốn." },
+  { id: "gis", path: "/gis-planning", label: "Bản đồ quy hoạch", short: "Bản đồ", icon: "map", description: "Rủi ro quy hoạch và cơ hội." },
+  { id: "ai", path: "/ai-analyst", label: "Trợ lý phân tích", short: "Trợ lý", icon: "psychology", description: "Hỏi nhanh, ra quyết định nhanh." },
+  { id: "ops", path: "/data-ops", label: "Theo dõi dữ liệu", short: "Dữ liệu", icon: "settings_input_component", description: "Giám sát ETL và chất lượng dữ liệu." },
+  { id: "explorer", path: "/explorer", label: "Chi tiết tài sản", short: "Tài sản", icon: "explore", description: "Xem sâu từng tài sản." },
+  { id: "report", path: "/periodic-report", label: "Báo cáo định kỳ", short: "Báo cáo", icon: "summarize", description: "Tóm tắt điều hành theo kỳ." }
 ];
+
+const PANEL_HINTS = {
+  "Xu hướng điều hành 2025–2050": "Theo dõi xu hướng KPI và kịch bản điều hành dài hạn.",
+  "Kiểm tra giả định tăng trưởng": "Điều chỉnh tăng trưởng để kiểm tra độ nhạy chiến lược.",
+  "Khuyến nghị điều hành": "Tóm tắt hành động ưu tiên cho ban điều hành.",
+  "ROI theo khu vực nổi bật": "So sánh hiệu quả đầu tư giữa các khu vực.",
+  "Thanh khoản và Giá/m²": "Đọc sức mua và mặt bằng giá trên cùng biểu đồ.",
+  "So sánh phân khúc": "Đối chiếu hiệu quả giữa các nhóm tài sản.",
+  "Insight phân biệt khu vực": "Rút ra điểm khác biệt nhanh giữa các khu vực.",
+  "Thiết lập phân tích": "Chọn chiều phân tích và chỉ tiêu đo lường.",
+  "Thông tin so sánh": "Hiển thị phạm vi và bối cảnh đang so sánh.",
+  "Ma trận hiệu quả (": "Heatmap hiệu quả để nhìn nhanh khu vực/phân khúc.",
+  "Phân đoạn tiềm năng cao": "Lọc ra nhóm phân khúc đáng ưu tiên.",
+  "Thông số tài sản": "Thông tin đầu vào của tài sản đang mô phỏng.",
+  "Giả định đầu tư": "Thiết lập ngân sách, tăng trưởng và thời gian nắm giữ.",
+  "Kết quả tài chính dự kiến": "Kết quả mô phỏng tài chính đầu ra.",
+  "Triển vọng giá trị theo kịch bản": "So sánh ba kịch bản xấu, cơ sở và lạc quan.",
+  "Mốc thời gian & tình huống thua lỗ": "Xem mốc hoàn vốn và điểm rủi ro.",
+  "Khuyến nghị đầu tư tương lai": "Đọc khuyến nghị AI cho quyết định đầu tư.",
+  "Bản đồ quy hoạch": "Xem rủi ro quy hoạch và opportunity score.",
+  "Chú giải và khu vực cần theo dõi": "Giải thích màu sắc và khu vực cảnh báo.",
+  "Câu hỏi phân tích": "Nhập câu hỏi để truy vấn RAG/LLM.",
+  "Thanh tra nguồn": "Kiểm tra nguồn trích dẫn và độ tin cậy.",
+  "Tình trạng dữ liệu": "Theo dõi trạng thái nạp và cập nhật dữ liệu.",
+  "Nhật ký cập nhật dữ liệu": "Xem lịch sử các lần nạp dữ liệu.",
+  "Trung tâm dữ liệu công cộng": "Nguồn dữ liệu và trạng thái khai thác.",
+  "Bảng tài sản": "Danh sách tài sản trong bộ lọc hiện tại.",
+  "Phát hiện chính": "Tóm tắt các phát hiện cần nhấn mạnh.",
+  "Ghi chú điều hành": "Ghi chú ngắn cho báo cáo định kỳ của lãnh đạo.",
+  "Tóm tắt mô phỏng đầu tư": "Tóm tắt ba chỉ số chính của mô phỏng.",
+  "Báo cáo định kỳ": "Tổng hợp kết quả để trình bày theo chu kỳ."
+};
 
 function currentPageId() {
   const path = window.location.pathname === "/" ? "/overview" : window.location.pathname;
@@ -392,6 +425,23 @@ function buildExecutiveTrend(timeline = [], overrideGrowthPct = null) {
     });
   }
   return projection;
+}
+
+function buildTrendSnapshots(trend = []) {
+  if (!trend.length) return [];
+  const desiredYears = [2025, 2030, 2035, 2040, 2045, 2050];
+  const byYear = new Map(trend.map((row) => [Number(row.year), row]));
+  const latest = trend[trend.length - 1];
+  return desiredYears
+    .map((year) => byYear.get(year) || latest)
+    .filter(Boolean)
+    .map((row, index) => ({
+      year: row.year,
+      price_billion: Number(row.price_billion || 0),
+      roi_pct: Number(row.roi_pct || 0),
+      stage: row.stage || "projection",
+      emphasis: index === 0 ? "current" : index === desiredYears.length - 1 ? "target" : "forecast"
+    }));
 }
 
 function normalizeText(value = "") {
@@ -786,10 +836,14 @@ function KpiCard({ label, value, delta, icon, tone = "default" }) {
 }
 
 function Panel({ title, children, action, className = "" }) {
+  const hint = Object.entries(PANEL_HINTS).find(([key]) => title.startsWith(key))?.[1];
   return (
     <section className={`panel ${className}`}>
       <div className="panel-head">
-        <h3>{title}</h3>
+        <div className="panel-title-wrap">
+          <h3 tabIndex={0} aria-label={hint ? `${title}. ${hint}` : title}>{title}</h3>
+          {hint ? <span className="panel-hint-tooltip">{hint}</span> : null}
+        </div>
         {action}
       </div>
       {children}
@@ -804,6 +858,25 @@ function PageHeader({ eyebrow, title, description }) {
       <h2>{title}</h2>
       <span>{description}</span>
     </div>
+  );
+}
+
+function AppFooter({ activePage, loading, aiRuntime, analytics, etl }) {
+  const dataTimestamp = analytics?.kpis?.last_data_refresh || etl?.status?.finished_at || aiRuntime?.updated_at;
+  const systemStatus = loading ? "Data syncing" : "System ready";
+  return (
+    <footer className="app-footer">
+      <div className="app-footer-brand">
+        <strong>PropertyVision BI</strong>
+        <span>Decision Intelligence for real estate analysis and executive reporting.</span>
+      </div>
+      <div className="app-footer-meta">
+        <span>Version {APP_VERSION}</span>
+        <span>© {new Date().getFullYear()} PropertyVision</span>
+        <span>Updated {dataTimestamp ? formatDateTime(dataTimestamp) : "Chưa cập nhật"}</span>
+        <span>{systemStatus}</span>
+      </div>
+    </footer>
   );
 }
 
@@ -831,12 +904,22 @@ function isDefaultFilters(filters) {
   );
 }
 
-function AppShell({ activePage, setActivePage, children, loading, metadata, filters, setFilters, aiRuntime }) {
+function AppShell({ activePage, setActivePage, children, loading, metadata, filters, setFilters, aiRuntime, analytics, etl }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [navTip, setNavTip] = useState(null);
 
   function navigate(page) {
     window.history.pushState({}, "", page.path);
     setActivePage(page.id);
+  }
+
+  function showNavTip(page, event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setNavTip({
+      title: page.label,
+      description: page.description,
+      top: rect.top + rect.height / 2,
+    });
   }
 
   const filterSummary = buildFilterSummary(filters);
@@ -870,14 +953,30 @@ function AppShell({ activePage, setActivePage, children, loading, metadata, filt
         </div>
         <nav className="main-nav">
           {pages.map((page) => (
-            <button key={page.id} className={activePage === page.id ? "active" : ""} onClick={() => navigate(page)}>
+            <button
+              key={page.id}
+              className={activePage === page.id ? "active" : "" }
+              onClick={() => navigate(page)}
+              onMouseEnter={(event) => showNavTip(page, event)}
+              onMouseLeave={() => setNavTip(null)}
+              onFocus={(event) => showNavTip(page, event)}
+              onBlur={() => setNavTip(null)}
+              title={page.description}
+              aria-label={`${page.label}. ${page.description}`}
+            >
               <Icon name={page.icon} fill={activePage === page.id} />
-              <span>{page.label}</span>
+              <span className="nav-label">{page.label}</span>
             </button>
           ))}
         </nav>
         <GlobalFilters metadata={metadata} filters={filters} setFilters={setFilters} />
       </aside>
+      {navTip ? (
+        <div className="nav-tooltip" style={{ top: `${Math.round(navTip.top)}px` }}>
+          <strong>{navTip.title}</strong>
+          <span>{navTip.description}</span>
+        </div>
+      ) : null}
 
       <header className="top-appbar">
         <div className="top-appbar-left">
@@ -913,7 +1012,10 @@ function AppShell({ activePage, setActivePage, children, loading, metadata, filt
         onClose={() => setFiltersOpen(false)}
       />
 
-      <main className="page-canvas">{children}</main>
+      <main className="page-canvas">
+        <div className="page-content">{children}</div>
+        <AppFooter activePage={activePage} loading={loading} aiRuntime={aiRuntime} analytics={analytics} etl={etl} />
+      </main>
     </div>
   );
 }
@@ -1050,6 +1152,7 @@ function OverviewPage({ activePage, analytics, typeShare, filters, predictForm, 
   const [liveGrowthRecommendation, setLiveGrowthRecommendation] = useState(null);
   const [growthStatus, setGrowthStatus] = useState("idle");
   const executiveTrend = useMemo(() => buildExecutiveTrend(analytics?.timeline || [], growthStressPct), [analytics?.timeline, growthStressPct]);
+  const trendSnapshots = useMemo(() => buildTrendSnapshots(executiveTrend), [executiveTrend]);
   const executiveBriefs = useMemo(() => buildExecutiveBriefs(analytics?.districts || []), [analytics?.districts]);
   const projected2050 = executiveTrend[executiveTrend.length - 1];
   const overviewRecommendation = useMemo(
@@ -1118,6 +1221,15 @@ function OverviewPage({ activePage, analytics, typeShare, filters, predictForm, 
             </ComposedChart>
           </ResponsiveContainer>
           <p className="panel-note prominent">Biểu đồ này được trình bày theo góc nhìn điều hành: tập trung vào xu hướng dài hạn và mức sinh lời chung thay vì chi tiết biến động ngắn hạn.</p>
+          <div className="trend-snapshot-grid">
+            {trendSnapshots.map((row) => (
+              <article className={`trend-snapshot ${row.emphasis}`} key={row.year}>
+                <span>Năm {row.year}</span>
+                <strong>{row.price_billion.toFixed(1)} tỷ</strong>
+                <small>ROI {row.roi_pct.toFixed(1)}%</small>
+              </article>
+            ))}
+          </div>
         </Panel>
         <Panel title="Kiểm tra giả định tăng trưởng" className="span-4">
           <div className="control-stack">
@@ -1127,7 +1239,21 @@ function OverviewPage({ activePage, analytics, typeShare, filters, predictForm, 
             </label>
           </div>
           <div className={`scenario-recommendation tone-${growthStatus === "error" ? "warn" : growthStatus === "ready" ? "good" : "neutral"}`}>
-            <strong>{growthStatus === "ready" ? "RAG đang sinh khuyến nghị" : growthStatus === "loading" ? "Đang truy xuất RAG..." : "Khuyến nghị chờ làm mới"}</strong>
+            <div className="scenario-recommendation-head">
+              <strong>{growthStatus === "ready" ? "RAG đã trả kết quả" : growthStatus === "loading" ? "RAG đang truy xuất và phân tích" : "Khuyến nghị chờ làm mới"}</strong>
+              {growthStatus === "loading" ? (
+                <span className="generation-badge scenario-badge">
+                  <span className="streaming-dots" aria-hidden="true"><i /><i /><i /></span>
+                  Đang xử lý giả định tăng trưởng
+                </span>
+              ) : null}
+            </div>
+            {growthStatus === "loading" ? (
+              <div className="scenario-processing">
+                <p>Hệ thống đang nối dữ liệu RAG, so sánh kịch bản tăng trưởng và sinh khuyến nghị điều hành.</p>
+                <div className="simulation-progress"><i /></div>
+              </div>
+            ) : null}
             <p>{liveGrowthRecommendation?.answer || overviewRecommendation.body}</p>
             {liveGrowthRecommendation?.why ? <p><b>Lý do:</b> {liveGrowthRecommendation.why}</p> : null}
             {liveGrowthRecommendation?.suggestion ? <p><b>Hành động:</b> {liveGrowthRecommendation.suggestion}</p> : null}
@@ -1280,6 +1406,158 @@ function Score({ value }) {
 }
 
 function SlicePage({ sliceDice, sliceConfig, setSliceConfig }) {
+  const [addressDetail, setAddressDetail] = useState(null);
+  const [copyState, setCopyState] = useState("idle");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  function openAddressDetail(row) {
+    setAddressDetail({
+      segment: row?.[sliceDice?.row_dimension] ?? "N/A",
+      subSegment: row?.[sliceDice?.column_dimension] ?? "N/A",
+      records: Number(row?.listings || 0),
+      addressCount: Number(row?.address_count || 0),
+      addresses: Array.isArray(row?.addresses) ? row.addresses : []
+    });
+    setSearchQuery("");
+    setCopyState("idle");
+  }
+
+  function closeAddressDetail() {
+    setAddressDetail(null);
+  }
+
+  function normalizeAddress(address) {
+    if (typeof address === "string") {
+      return {
+        house_number: "",
+        street_name: "",
+        ward_name: "",
+        district_display: "",
+        property_type_name: "",
+        address_display: address
+      };
+    }
+    return {
+      house_number: address?.house_number || "",
+      street_name: address?.street_name || "",
+      ward_name: address?.ward_name || "",
+      district_display: address?.district_display || "",
+      property_type_name: address?.property_type_name || "",
+      address_display: address?.address_display || "N/A"
+    };
+  }
+
+  const visibleAddresses = useMemo(() => {
+    const source = Array.isArray(addressDetail?.addresses) ? addressDetail.addresses : [];
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return source;
+    return source.filter((address) => {
+      const item = normalizeAddress(address);
+      const haystack = [
+        item.house_number,
+        item.street_name,
+        item.ward_name,
+        item.district_display,
+        item.property_type_name,
+        item.address_display
+      ].join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [addressDetail, searchQuery]);
+
+  const hasAnyHouseNumber = useMemo(
+    () => visibleAddresses.some((address) => Boolean(normalizeAddress(address).house_number)),
+    [visibleAddresses]
+  );
+
+  function buildAddressTextRows(addresses) {
+    return addresses.map((address, index) => {
+      const item = normalizeAddress(address);
+      const numbered = `${index + 1}. ${item.address_display}`;
+      return numbered;
+    });
+  }
+
+  function buildAddressTableRows(addresses) {
+    return addresses.map((address, index) => {
+      const item = normalizeAddress(address);
+      const columns = [
+        index + 1,
+        item.house_number || "",
+        item.street_name || "",
+        item.ward_name || "",
+        item.district_display || "",
+        item.address_display || ""
+      ];
+      return columns.join(" | ");
+    });
+  }
+
+  function escapeCsv(value) {
+    const text = String(value ?? "");
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+
+  function buildCsvRows(addresses) {
+    const header = ["STT", "Số nhà", "Đường", "Phường/Xã", "Quận/Huyện", "Địa chỉ"];
+    const rows = addresses.map((address, index) => {
+      const item = normalizeAddress(address);
+      return [
+        index + 1,
+        item.house_number || "",
+        item.street_name || "",
+        item.ward_name || "",
+        item.district_display || "",
+        item.address_display || ""
+      ].map(escapeCsv).join(",");
+    });
+    return [header.map(escapeCsv).join(","), ...rows];
+  }
+
+  function safeFilename(value) {
+    return String(value || "addresses")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .toLowerCase() || "addresses";
+  }
+
+  async function copyText(kind) {
+    if (!visibleAddresses.length) return;
+    const lines = kind === "table"
+      ? [
+          "STT | Số nhà | Đường | Phường/Xã | Quận/Huyện | Địa chỉ",
+          ...buildAddressTableRows(visibleAddresses)
+        ]
+      : buildAddressTextRows(visibleAddresses);
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopyState(kind === "table" ? "copied_table" : "copied_list");
+      window.setTimeout(() => setCopyState("idle"), 1800);
+    } catch {
+      setCopyState("error");
+      window.setTimeout(() => setCopyState("idle"), 1800);
+    }
+  }
+
+  async function downloadCsv() {
+    if (!visibleAddresses.length) return;
+    const csv = `\ufeff${buildCsvRows(visibleAddresses).join("\n")}`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    const base = `${safeFilename(addressDetail?.segment)}_${safeFilename(addressDetail?.subSegment)}`;
+    anchor.download = `${base || "propertyvision_addresses"}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+    setCopyState("downloaded_csv");
+    window.setTimeout(() => setCopyState("idle"), 1800);
+  }
+
   return (
     <>
       <PageHeader eyebrow="Đa chiều" title="Phân tích đa chiều" description="So sánh dữ liệu theo nhiều góc nhìn để tìm phân khúc đáng ưu tiên cho doanh nghiệp." />
@@ -1310,11 +1588,87 @@ function SlicePage({ sliceDice, sliceConfig, setSliceConfig }) {
           <div className="table-wrap">
             <table>
               <thead><tr><th>Segment</th><th>Sub segment</th><th>Records</th><th>ROI</th><th>Giá/m²</th><th>Score</th></tr></thead>
-              <tbody>{(sliceDice?.top_segments || []).map((row, index) => <tr key={index}><td>{row[sliceDice.row_dimension]}</td><td>{row[sliceDice.column_dimension]}</td><td>{row.listings?.toLocaleString("vi-VN")}</td><td>{pct(row.avg_roi)}</td><td>{money(row.avg_price_m2)}</td><td>{Number(row.opportunity_score || 0).toFixed(1)}</td></tr>)}</tbody>
+              <tbody>{(sliceDice?.top_segments || []).map((row, index) => <tr key={index}><td>{row[sliceDice.row_dimension]}</td><td>{row[sliceDice.column_dimension]}</td><td><button type="button" className="record-link" onClick={() => openAddressDetail(row)}>{row.listings?.toLocaleString("vi-VN")}</button></td><td>{pct(row.avg_roi)}</td><td>{money(row.avg_price_m2)}</td><td>{Number(row.opportunity_score || 0).toFixed(1)}</td></tr>)}</tbody>
             </table>
           </div>
         </Panel>
       </div>
+      {addressDetail ? (
+        <>
+          <button type="button" className="detail-backdrop" aria-label="Đóng danh sách địa chỉ" onClick={closeAddressDetail} />
+          <section className="record-detail-modal" role="dialog" aria-modal="true" aria-labelledby="record-detail-title">
+            <div className="record-detail-head">
+              <div>
+                <p>Danh sách địa chỉ</p>
+                <h4 id="record-detail-title">{addressDetail.segment} / {addressDetail.subSegment}</h4>
+              </div>
+              <div className="record-detail-actions">
+                <button type="button" className="detail-copy-button" onClick={() => copyText("list")} disabled={!visibleAddresses.length}>
+                  {copyState === "copied_list" ? "Đã copy danh sách" : "Copy đánh số"}
+                </button>
+                <button type="button" className="detail-copy-secondary" onClick={() => copyText("table")} disabled={!visibleAddresses.length}>
+                  {copyState === "copied_table" ? "Đã copy bảng" : "Copy bảng"}
+                </button>
+                <button type="button" className="detail-download-button" onClick={downloadCsv} disabled={!visibleAddresses.length}>
+                  {copyState === "downloaded_csv" ? "Đã tải CSV" : "Tải CSV"}
+                </button>
+                <button type="button" className="detail-close-button" onClick={closeAddressDetail}>Đóng</button>
+              </div>
+            </div>
+            <div className="record-detail-searchbar">
+              <div className="record-detail-search-row">
+                <input
+                  type="search"
+                  className="record-detail-search"
+                  placeholder="Tìm số nhà, đường, phường hoặc quận..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button type="button" className="detail-clear-button" onClick={() => setSearchQuery("")} disabled={!searchQuery}>
+                  Xóa lọc
+                </button>
+              </div>
+              <small>{visibleAddresses.length.toLocaleString("vi-VN")} / {addressDetail.addresses.length.toLocaleString("vi-VN")} địa chỉ đang hiển thị</small>
+              {!hasAnyHouseNumber ? (
+                <div className="record-detail-note">Không có số nhà, chỉ có địa chỉ cấp xã/huyện.</div>
+              ) : null}
+            </div>
+            <div className="record-detail-meta">
+              <span>{addressDetail.records.toLocaleString("vi-VN")} bản ghi</span>
+              <span>{addressDetail.addressCount.toLocaleString("vi-VN")} địa chỉ</span>
+              <span>{visibleAddresses.length.toLocaleString("vi-VN")} địa chỉ xem nhanh</span>
+            </div>
+            <div className="record-detail-body">
+              {visibleAddresses.length ? (
+                <ul className="record-detail-list">
+                  {visibleAddresses.map((address, idx) => {
+                    const item = normalizeAddress(address);
+                    const houseNumber = item.house_number;
+                    const streetName = item.street_name;
+                    const wardName = item.ward_name;
+                    const districtDisplay = item.district_display;
+                    const propertyType = item.property_type_name;
+                    return (
+                      <li key={`${item.address_display}-${idx}`}>
+                        <div className="record-address-head">
+                          <strong><span className="record-address-index">{idx + 1}</span>{item.address_display}</strong>
+                          {houseNumber ? <span className="record-address-pill">Số nhà {houseNumber}</span> : null}
+                        </div>
+                        <div className="record-address-foot">
+                          {propertyType ? <span>{propertyType}</span> : null}
+                          {(streetName || wardName || districtDisplay) ? <small>{[streetName, wardName, districtDisplay].filter(Boolean).join(" · ")}</small> : null}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="record-detail-empty">Chưa có địa chỉ chi tiết cho phân đoạn này.</p>
+              )}
+            </div>
+          </section>
+        </>
+      ) : null}
     </>
   );
 }
@@ -1439,22 +1793,76 @@ function DecisionPage({ analytics, metadata, filters, decisionView, setDecisionV
 }
 
 function GisPage({ mapData, analytics }) {
+  const [riskFilter, setRiskFilter] = useState("all");
+  const [minRoi, setMinRoi] = useState(0);
+  const [minScore, setMinScore] = useState(0);
   const center = mapData?.center || { latitude: 10.78, longitude: 106.7, zoom: 10 };
   const lastRefresh = analytics?.kpis?.last_data_refresh;
-  const leading = [...(mapData?.districts || [])].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 3);
+  const districts = mapData?.districts || [];
+  const maxRoi = districts.length ? Math.max(...districts.map((row) => Number(row.roi_pct || 0))) : 0;
+  const maxScore = districts.length ? Math.max(...districts.map((row) => Number(row.opportunity_score || 0))) : 0;
+  const filteredDistricts = useMemo(
+    () => districts.filter((row) => {
+      const roi = Number(row.roi_pct || 0);
+      const score = Number(row.opportunity_score || 0);
+      const riskMatch = riskFilter === "all" || row.risk_level === riskFilter;
+      return riskMatch && roi >= Number(minRoi || 0) && score >= Number(minScore || 0);
+    }),
+    [districts, riskFilter, minRoi, minScore]
+  );
+  const leading = [...filteredDistricts].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 3);
+  const watchlist = [...filteredDistricts].filter((row) => row.risk_level === "high").sort((a, b) => a.opportunity_score - b.opportunity_score).slice(0, 4);
+  const avgRoi = districts.length ? districts.reduce((sum, row) => sum + Number(row.roi_pct || 0), 0) / districts.length : 0;
+  const avgScore = districts.length ? districts.reduce((sum, row) => sum + Number(row.opportunity_score || 0), 0) / districts.length : 0;
+  const chartRows = [...filteredDistricts].sort((a, b) => b.roi_pct - a.roi_pct).slice(0, 5);
   return (
     <>
       <PageHeader eyebrow="Bản đồ quy hoạch" title="Bản đồ và quy hoạch" description="Phân tích điểm cơ hội và mức độ rủi ro theo không gian." />
       <div className="grid-12">
         <Panel title="Bản đồ quy hoạch" className="span-8 map-panel-host">
-          <MapContainer key={mapData?.city || "default-city"} center={[center.latitude, center.longitude]} zoom={center.zoom || 10} scrollWheelZoom={false} className="leaflet-panel">
+          <div className="map-filter-bar">
+            <label>
+              <span>Rủi ro</span>
+              <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)}>
+                <option value="all">Tất cả</option>
+                <option value="low">Thấp</option>
+                <option value="medium">Trung bình</option>
+                <option value="high">Cao</option>
+              </select>
+            </label>
+            <label>
+              <span>ROI tối thiểu: {Number(minRoi).toFixed(1)}%</span>
+              <input type="range" min="0" max={Math.max(20, Math.ceil(maxRoi))} step="0.5" value={minRoi} onChange={(e) => setMinRoi(Number(e.target.value))} />
+            </label>
+            <label>
+              <span>Score tối thiểu: {Number(minScore).toFixed(0)}</span>
+              <input type="range" min="0" max={Math.max(100, Math.ceil(maxScore))} step="1" value={minScore} onChange={(e) => setMinScore(Number(e.target.value))} />
+            </label>
+            <button
+              type="button"
+              className="secondary-btn map-filter-reset"
+              onClick={() => {
+                setRiskFilter("all");
+                setMinRoi(0);
+                setMinScore(0);
+              }}
+            >
+              Bỏ lọc
+            </button>
+          </div>
+          <MapContainer key={mapData?.city || "default-city"} center={[center.latitude, center.longitude]} zoom={center.zoom || 10} scrollWheelZoom={false} className="leaflet-panel main-map">
             <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {(mapData?.districts || []).map((row) => <CircleMarker key={row.district} center={[row.latitude, row.longitude]} radius={Math.max(8, Math.min(30, row.opportunity_score / 3))} pathOptions={{ color: row.risk_level === "low" ? "#0f766e" : row.risk_level === "high" ? "#c2410c" : "#d97706", fillOpacity: 0.62 }}><Popup><strong>{row.district}</strong><p>Score {row.opportunity_score.toFixed(1)}</p><p>ROI {row.roi_pct.toFixed(2)}%</p><p>{row.planning_note}</p></Popup></CircleMarker>)}
+            {(filteredDistricts.length ? filteredDistricts : districts).map((row) => <CircleMarker key={row.district} center={[row.latitude, row.longitude]} radius={Math.max(8, Math.min(30, row.opportunity_score / 3))} pathOptions={{ color: row.risk_level === "low" ? "#0f766e" : row.risk_level === "high" ? "#c2410c" : "#d97706", fillOpacity: 0.62 }}><Popup><strong>{row.district}</strong><p>Score {row.opportunity_score.toFixed(1)}</p><p>ROI {row.roi_pct.toFixed(2)}%</p><p>{row.planning_note}</p></Popup></CircleMarker>)}
           </MapContainer>
           <div className="map-footer-grid">
             <article className="map-fact-card">
               <span>Cập nhật</span>
               <strong>{formatDateTime(lastRefresh)}</strong>
+            </article>
+            <article className="map-fact-card">
+              <span>Số khu vực</span>
+              <strong>{districts.length.toLocaleString("vi-VN")}</strong>
+              <small>Các điểm trên bản đồ đang khớp với thành phố và bộ lọc hiện tại.</small>
             </article>
             {leading.map((row) => (
               <article className="map-fact-card" key={row.district}>
@@ -1466,13 +1874,66 @@ function GisPage({ mapData, analytics }) {
           </div>
         </Panel>
         <Panel title="Chú giải và khu vực cần theo dõi" className="span-4">
-          <div className="map-legend">
-            <span><i className="dot low" /> Rủi ro thấp</span>
-            <span><i className="dot medium" /> Rủi ro trung bình</span>
-            <span><i className="dot high" /> Rủi ro cao</span>
-            <small>Kích thước điểm tròn thể hiện điểm cơ hội</small>
+          <div className="map-side-stack">
+            <div className="map-executive-card">
+              <span>Tóm tắt điều hành</span>
+              <strong>{leading[0]?.district || "Chưa có khu dẫn đầu"}</strong>
+              <small>{filteredDistricts.length ? `${filteredDistricts.length} khu đang khớp bộ lọc` : "Không có khu vực nào khớp bộ lọc hiện tại"}</small>
+            </div>
+            <div className="map-legend">
+              <span><i className="dot low" /> Rủi ro thấp</span>
+              <span><i className="dot medium" /> Rủi ro trung bình</span>
+              <span><i className="dot high" /> Rủi ro cao</span>
+              <small>Kích thước điểm tròn thể hiện điểm cơ hội</small>
+            </div>
+            <div className="map-metrics-grid">
+              <article className="map-metric-card">
+                <span>ROI TB</span>
+                <strong>{pct(avgRoi)}</strong>
+              </article>
+              <article className="map-metric-card">
+                <span>Score TB</span>
+                <strong>{avgScore.toFixed(1)}</strong>
+              </article>
+              <article className="map-metric-card">
+              <span>Top nổi bật</span>
+              <strong>{leading[0]?.district || "N/A"}</strong>
+            </article>
+              <article className="map-metric-card">
+                <span>Cần theo dõi</span>
+                <strong>{watchlist[0]?.district || "N/A"}</strong>
+              </article>
+            </div>
+            <div className="map-subsection">
+              <span className="map-subsection-title">ROI top khu vực</span>
+              {chartRows.length ? (
+                <ResponsiveContainer width="100%" height={190}>
+                  <BarChart data={chartRows}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="district" interval={0} angle={-20} textAnchor="end" height={58} tick={{ fontSize: 11 }} />
+                    <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}%`} />
+                    <Tooltip formatter={(value) => pct(value)} />
+                    <Bar dataKey="roi_pct" fill="#0f766e" radius={[6, 6, 0, 0]} name="ROI" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="map-empty-state">Không có khu vực nào thỏa điều kiện lọc để vẽ chart.</p>
+              )}
+            </div>
+            <div className="map-subsection">
+              <span className="map-subsection-title">Điểm nóng</span>
+              <div className="map-list compact">
+                {leading.length ? leading.map((row) => <article className="risk-card compact" key={`lead-${row.district}`}><div><strong>{row.district}</strong><span className={`badge ${row.risk_level}`}>{row.risk_level}</span></div><p>{row.planning_note}</p><small>ROI {row.roi_pct.toFixed(2)}% | Score {row.opportunity_score.toFixed(1)}</small></article>) : <p className="map-empty-state">Không có khu nóng nào sau khi lọc.</p>}
+              </div>
+            </div>
+            <div className="map-subsection">
+              <span className="map-subsection-title">Khu cần theo dõi</span>
+              <div className="map-list compact">
+                {(watchlist.length ? watchlist : filteredDistricts.slice(0, 4)).map((row) => <article className="risk-card compact" key={`watch-${row.district}`}><div><strong>{row.district}</strong><span className={`badge ${row.risk_level}`}>{row.risk_level}</span></div><p>{row.planning_note}</p><small>ROI {row.roi_pct.toFixed(2)}% | Score {row.opportunity_score.toFixed(1)}</small></article>)}
+                {!watchlist.length && !filteredDistricts.length ? <p className="map-empty-state">Không có khu vực rủi ro cao thỏa điều kiện lọc.</p> : null}
+              </div>
+            </div>
           </div>
-          <div className="map-list">{(mapData?.districts || []).slice(0, 10).map((row) => <article className="risk-card" key={row.district}><div><strong>{row.district}</strong><span className={`badge ${row.risk_level}`}>{row.risk_level}</span></div><p>{row.planning_note}</p><small>ROI {row.roi_pct.toFixed(2)}% | Score {row.opportunity_score.toFixed(1)}</small></article>)}</div>
         </Panel>
       </div>
     </>
@@ -1558,10 +2019,53 @@ function ReportPage({ analytics, whatIf, reportNote, reportNoteLoading }) {
   const kpis = analytics?.kpis || {};
   const reportBriefs = useMemo(() => buildExecutiveBriefs(analytics?.districts || []), [analytics?.districts]);
   const reportStage = aiStageInfo(reportNote?.status || reportNote?.mode, reportNoteLoading);
+  const exportTimestamp = analytics?.kpis?.last_data_refresh ? formatDateTime(analytics.kpis.last_data_refresh) : formatDateTime(new Date().toISOString());
+
+  function exportPdf() {
+    window.print();
+  }
+
   return (
     <>
       <PageHeader eyebrow="Báo cáo định kỳ" title="Báo cáo định kỳ" description="Tóm tắt phát hiện chính, khuyến nghị và căn cứ tham chiếu để trình bày theo chu kỳ." />
-      <div className="grid-12">
+      <div className="report-toolbar no-print">
+        <div>
+          <strong>Bản in điều hành</strong>
+          <span>Định dạng sẵn sàng xuất PDF cho báo cáo công ty.</span>
+        </div>
+        <button type="button" className="primary-btn" onClick={exportPdf}>Xuất PDF</button>
+      </div>
+      <section className="report-cover">
+        <div className="report-cover-main">
+          <span>Executive Report</span>
+          <h3>PropertyVision BI</h3>
+          <p>Báo cáo định kỳ tập trung vào phát hiện chính, khuyến nghị hành động và cơ sở dữ liệu làm căn cứ trình bày cho ban điều hành.</p>
+          <div className="report-cover-meta">
+            <span>Cập nhật {exportTimestamp}</span>
+            <span>ROI TB {pct(kpis.avg_roi)}</span>
+            <span>{(kpis.transaction_count || 0).toLocaleString("vi-VN")} giao dịch / bản ghi</span>
+          </div>
+        </div>
+        <div className="report-cover-stats">
+          <article>
+            <span>Khu dẫn đầu</span>
+            <strong>{kpis.best_district || "N/A"}</strong>
+          </article>
+          <article>
+            <span>Giá trị tương lai</span>
+            <strong>{whatIf ? money(whatIf.summary.future_value) : "N/A"}</strong>
+          </article>
+          <article>
+            <span>ROI tích lũy</span>
+            <strong>{whatIf ? pct(whatIf.summary.cumulative_roi_pct) : "N/A"}</strong>
+          </article>
+          <article>
+            <span>Hoàn vốn</span>
+            <strong>{whatIf?.summary?.payback_years ? `${whatIf.summary.payback_years.toFixed(1)} năm` : "N/A"}</strong>
+          </article>
+        </div>
+      </section>
+      <div className="grid-12 report-grid">
         <Panel title="Phát hiện chính" className="span-6">
           <div className="brief-grid compact">
             {reportBriefs.map((brief) => (
@@ -1597,7 +2101,7 @@ function ReportPage({ analytics, whatIf, reportNote, reportNoteLoading }) {
             <p>{reportNoteLoading ? "Đang làm mới ghi chú điều hành..." : "Ghi chú điều hành sẽ tự làm mới theo dữ liệu hiện tại để không phải chờ thao tác thủ công."}</p>
           )}
         </Panel>
-        <Panel title="Tóm tắt mô phỏng đầu tư" className="span-12">{whatIf ? <div className="kpi-grid compact"><KpiCard label="Giá trị tương lai" value={money(whatIf.summary.future_value)} /><KpiCard label="ROI tích lũy" value={pct(whatIf.summary.cumulative_roi_pct)} /><KpiCard label="Thời gian hoàn vốn" value={`${whatIf.summary.payback_years?.toFixed(1)} năm`} /></div> : <p className="muted">Chạy mô phỏng đầu tư để đưa kết quả vào báo cáo.</p>}<Disclosure title="Mở ghi chú kỹ thuật" compact><p className="muted">Phần này dùng khi cần giải thích sâu hơn về cách trợ lý phân tích đưa ra khuyến nghị và cách mô phỏng tính các chỉ số.</p></Disclosure></Panel>
+        <Panel title="Tóm tắt mô phỏng đầu tư" className="span-12">{whatIf ? <div className="kpi-grid compact"><KpiCard label="Giá trị tương lai" value={money(whatIf.summary.future_value)} /><KpiCard label="ROI tích lũy" value={pct(whatIf.summary.cumulative_roi_pct)} /><KpiCard label="Thời gian hoàn vốn" value={`${whatIf.summary.payback_years?.toFixed(1)} năm`} /></div> : <p className="muted">Chạy mô phỏng đầu tư để đưa kết quả vào báo cáo.</p>}</Panel>
       </div>
     </>
   );
@@ -2037,7 +2541,7 @@ function App() {
   const pageProps = { activePage, analytics, typeShare, sliceDice, sliceConfig, setSliceConfig, metadata, filters, decisionView, setDecisionView, predictForm, setPredictForm, simulationForm, setSimulationForm, prediction, whatIf, aiRecommendation, runWhatIf, simulationLoading, simulationStage, mapData, etl, refreshEtl, loading, ragStatus, question, setQuestion, assistant, assistantLoading, askAssistant, reportNote, reportNoteLoading };
 
   return (
-    <AppShell activePage={activePage} setActivePage={setActivePage} loading={loading} metadata={metadata} filters={filters} setFilters={setFilters} aiRuntime={aiRuntime}>
+    <AppShell activePage={activePage} setActivePage={setActivePage} loading={loading} metadata={metadata} filters={filters} setFilters={setFilters} aiRuntime={aiRuntime} analytics={analytics} etl={etl}>
       {activePage === "overview" && <OverviewPage {...pageProps} />}
       {activePage === "market" && <MarketPage {...pageProps} />}
       {activePage === "slice" && <SlicePage {...pageProps} />}

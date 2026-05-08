@@ -128,7 +128,54 @@ flowchart LR
     Sources --> Answer
 ```
 
-## 6. Main Feature Map
+## 6. RAG Data-to-Answer Flow
+
+```mermaid
+flowchart TB
+    subgraph DataPrep["Document preparation"]
+        Market["Market analytics docs"]
+        Ward["Ward / micro-market docs"]
+        Street["Street-level docs"]
+        Legal["Legal documents table"]
+        Planning["Planning zones table"]
+        Market --> Docs["load_rag_documents()"]
+        Ward --> Docs
+        Street --> Docs
+        Legal --> Docs
+        Planning --> Docs
+        Docs --> Index["build_rag_index()"]
+    end
+
+    subgraph Retrieval["Retrieval and ranking"]
+        Query["User question"] --> Filters["Active filters + district focus"]
+        Filters --> Cache["get_rag_index() cache key"]
+        Cache --> Candidate["candidate_doc_indices()"]
+        Candidate --> Focus["Focus by district / city / ward / street"]
+        Focus --> Rank["Similarity ranking\nSentenceTransformers or TF-IDF fallback"]
+        Rank --> Sources["Top-k sources with scores"]
+    end
+
+    subgraph Generation["Grounded generation"]
+        Sources --> Prompt["Build assistant / decision prompt"]
+        Prompt --> Qwen["Hosted Qwen"]
+        Qwen --> Parse["Parse sections + clean text"]
+        Parse --> Enrich["Enrich with fallback data\nif answer is too generic"]
+        Enrich --> UI["Stream to React UI"]
+    end
+
+    Index --> Cache
+    Query --> Retrieval
+    Sources --> Prompt
+    Enrich --> UI
+```
+
+Key behaviors:
+- The index is rebuilt when data or planning/legal counts change.
+- District filters narrow the candidate set before similarity ranking.
+- Street-level questions prefer street documents; ward questions prefer micro-market documents.
+- If the model response is too generic, the backend enriches it with grounded summary data before returning it.
+
+## 7. Main Feature Map
 
 ```mermaid
 mindmap
