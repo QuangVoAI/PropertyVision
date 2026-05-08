@@ -1,4 +1,4 @@
-# PropertyVision BI
+# PropertyVision BI x RAG
 
 PropertyVision BI is a decision-intelligence platform for real estate analysis in **Ho Chi Minh City** and **Hanoi**.
 It combines BI dashboards, market analytics, price prediction, what-if simulation, GIS/planning views, and a retrieval-first AI assistant for executive reporting.
