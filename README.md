@@ -1,3 +1,12 @@
+---
+title: PropertyVision BI x RAG
+emoji: 🏢
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+---
+
 # PropertyVision BI x RAG
 
 <p align="center">
