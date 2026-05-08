@@ -1,0 +1,55 @@
+<svg width="1400" height="360" viewBox="0 0 1400 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title>PropertyVision BI x RAG</title>
+  <desc>Executive real-estate decision intelligence for Ho Chi Minh City and Hanoi.</desc>
+  <defs>
+    <linearGradient id="bg" x1="80" y1="40" x2="1320" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111f"/>
+      <stop offset="0.52" stop-color="#0f2a4a"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="1120" y1="60" x2="1280" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#f97316"/>
+    </linearGradient>
+    <filter id="glow" x="0" y="0" width="1400" height="360" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.03 0 1 0 0 0.19 0 0 1 0 0.31 0 0 0 0.32 0"/>
+      <feBlend mode="screen" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+
+  <rect width="1400" height="360" rx="32" fill="url(#bg)"/>
+  <circle cx="210" cy="92" r="68" fill="#22c55e" opacity="0.12" filter="url(#glow)"/>
+  <circle cx="1230" cy="272" r="120" fill="url(#accent)" opacity="0.18" filter="url(#glow)"/>
+  <path d="M102 270C240 208 356 206 504 232C676 262 818 274 1020 212C1118 182 1188 138 1288 114" stroke="#7dd3fc" stroke-opacity="0.28" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M104 292C266 226 396 220 536 244C722 276 874 294 1058 228C1166 190 1228 152 1298 138" stroke="#f59e0b" stroke-opacity="0.18" stroke-width="2.5" stroke-linecap="round"/>
+
+  <g opacity="0.92">
+    <rect x="104" y="88" width="126" height="126" rx="28" fill="#0b1730" fill-opacity="0.88" stroke="#8ab4ff" stroke-opacity="0.25"/>
+    <path d="M138 131V171H166V157H152V145H174V131H138Z" fill="#60a5fa"/>
+    <path d="M182 131V171H210V157H196V145H218V131H182Z" fill="#22c55e"/>
+    <path d="M138 177V193H218V177H138Z" fill="#f8fafc" fill-opacity="0.92"/>
+  </g>
+
+  <text x="270" y="122" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="0.08em">PROPERTYVISION BI x RAG</text>
+  <text x="270" y="174" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="54" font-weight="800">Decision Intelligence for Real Estate</text>
+  <text x="270" y="220" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500">FastAPI · React · RAG · NLP · Metro impact · Executive reporting</text>
+
+  <g transform="translate(270 250)">
+    <rect x="0" y="0" width="156" height="40" rx="20" fill="#0f766e" fill-opacity="0.18" stroke="#5eead4" stroke-opacity="0.3"/>
+    <text x="78" y="26" text-anchor="middle" fill="#99f6e4" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Ho Chi Minh City</text>
+  </g>
+  <g transform="translate(438 250)">
+    <rect x="0" y="0" width="112" height="40" rx="20" fill="#1d4ed8" fill-opacity="0.18" stroke="#93c5fd" stroke-opacity="0.28"/>
+    <text x="56" y="26" text-anchor="middle" fill="#bfdbfe" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Hanoi</text>
+  </g>
+
+  <g transform="translate(1034 90)">
+    <rect x="0" y="0" width="244" height="180" rx="28" fill="#08111f" fill-opacity="0.76" stroke="#7dd3fc" stroke-opacity="0.16"/>
+    <text x="30" y="48" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Executive release</text>
+    <text x="30" y="88" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500">• Market analytics</text>
+    <text x="30" y="114" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500">• What-if simulation</text>
+    <text x="30" y="140" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500">• Metro impact RAG</text>
+    <text x="30" y="166" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500">• PDF-ready reporting</text>
+  </g>
+</svg>
